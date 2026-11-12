@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>二周目の今日 ― 未来から戻ってきた自分として生きる</title>
+<meta name="description" content="「未来から戻ってきた自分」という、自分で選んだ物語で今日を生きるための小さなサイト。データは端末の中だけに保存されます。">
+<style>
+  :root{
+    --bg-deep:#070d24;
+    --bg-mid:#0e1838;
+    --bg-soft:#16224d;
+    --ink:#edf0ff;
+    --ink-dim:#aebadd;
+    --ink-faint:#7f8cb8;
+    --accent:#cfd9ff;
+    --gold:#e9d9a6;
+    --card:rgba(20,30,66,.72);
+    --card-line:rgba(160,175,230,.22);
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Yu Gothic",Meiryo,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 800px at 80% -10%, #23336e 0%, transparent 60%),
+      radial-gradient(1000px 700px at 10% 110%, #1a2757 0%, transparent 55%),
+      linear-gradient(180deg, var(--bg-mid) 0%, var(--bg-deep) 100%);
+    background-attachment:fixed;
+    min-height:100vh;
+    line-height:1.9;
+    font-size:17px;
+    -webkit-text-size-adjust:100%;
+  }
+  /* 星空 */
+  .stars,.stars::before,.stars::after{
+    position:fixed;inset:0;pointer-events:none;content:"";z-index:0;
+  }
+  .stars{
+    background-image:
+      radial-gradient(1.5px 1.5px at 12% 18%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 32% 8%, #dfe7ff 50%, transparent 51%),
+      radial-gradient(1.2px 1.2px at 55% 22%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 74% 12%, #ffeec2 50%, transparent 51%),
+      radial-gradient(1.4px 1.4px at 88% 26%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 6% 42%, #dfe7ff 50%, transparent 51%),
+      radial-gradient(1.2px 1.2px at 44% 36%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 66% 44%, #fff 50%, transparent 51%),
+      radial-gradient(1.3px 1.3px at 92% 58%, #dfe7ff 50%, transparent 51%),
+      radial-gradient(1px 1px at 22% 63%, #fff 50%, transparent 51%),
+      radial-gradient(1.2px 1.2px at 81% 76%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 38% 82%, #ffeec2 50%, transparent 51%),
+      radial-gradient(1.1px 1.1px at 59% 91%, #fff 50%, transparent 51%);
+    opacity:.8;
+  }
+  .stars::before{
+    background-image:
+      radial-gradient(1px 1px at 18% 28%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 47% 14%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 70% 33%, #dfe7ff 50%, transparent 51%),
+      radial-gradient(1px 1px at 85% 6%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 28% 52%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 51% 68%, #dfe7ff 50%, transparent 51%),
+      radial-gradient(1px 1px at 96% 84%, #fff 50%, transparent 51%);
+    animation:twinkle 5s ease-in-out infinite alternate;
+  }
+  .stars::after{
+    background-image:
+      radial-gradient(1px 1px at 9% 74%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 63% 58%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 79% 47%, #ffeec2 50%, transparent 51%),
+      radial-gradient(1px 1px at 35% 95%, #fff 50%, transparent 51%);
+    animation:twinkle 7s ease-in-out infinite alternate-reverse;
+  }
+  @keyframes twinkle{from{opacity:.25}to{opacity:.9}}
+  @media (prefers-reduced-motion: reduce){
+    .stars::before,.stars::after{animation:none}
+    html{scroll-behavior:auto}
+  }
+
+  .wrap{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:28px 20px 120px}
+
+  header.site-head{text-align:center;padding:26px 0 8px}
+  .site-title{
+    font-family:"Hiragino Mincho ProN","Hiragino Mincho","Yu Mincho","YuMincho",serif;
+    font-weight:600;letter-spacing:.14em;font-size:1.55rem;color:var(--ink);
+    text-shadow:0 0 18px rgba(180,195,255,.35);
+  }
+  .site-sub{color:var(--ink-faint);font-size:.85rem;letter-spacing:.08em;margin-top:4px}
+
+  nav.tabs{
+    position:sticky;top:10px;z-index:5;
+    display:flex;gap:6px;justify-content:center;flex-wrap:wrap;
+    background:rgba(10,16,40,.75);backdrop-filter:blur(8px);
+    border:1px solid var(--card-line);border-radius:999px;
+    padding:6px;margin:18px auto 26px;max-width:560px;
+  }
+  nav.tabs button{
+    appearance:none;border:0;background:transparent;color:var(--ink-dim);
+    font:inherit;font-size:.92rem;padding:10px 14px;border-radius:999px;cursor:pointer;
+    min-height:44px;letter-spacing:.04em;
+  }
+  nav.tabs button[aria-selected="true"]{background:var(--bg-soft);color:var(--ink);box-shadow:inset 0 0 0 1px var(--card-line)}
+
+  .view{display:none}
+  .view.active{display:block;animation:viewin .5s ease both}
+  @keyframes viewin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){.view.active{animation:none}}
+
+  .card{
+    background:var(--card);border:1px solid var(--card-line);border-radius:var(--radius);
+    padding:24px 20px;margin-bottom:20px;
+    box-shadow:0 10px 30px rgba(2,6,24,.35);
+  }
+  h2{
+    font-family:"Hiragino Mincho ProN","Hiragino Mincho","Yu Mincho","YuMincho",serif;
+    font-size:1.25rem;font-weight:600;letter-spacing:.06em;margin-bottom:14px;color:var(--ink);
+  }
+  h3{font-size:1.02rem;font-weight:600;margin:20px 0 6px;color:var(--accent)}
+  p{margin-bottom:12px}
+  .dim{color:var(--ink-dim)}
+  .small{font-size:.85rem;color:var(--ink-faint)}
+  .lead{
+    font-family:"Hiragino Mincho ProN","Hiragino Mincho","Yu Mincho","YuMincho",serif;
+    font-size:1.3rem;line-height:2.1;letter-spacing:.05em;text-align:center;
+    padding:18px 4px 6px;
+  }
+  .lead .glow{color:var(--gold);text-shadow:0 0 14px rgba(233,217,166,.45)}
+
+  .btn{
+    display:block;width:100%;appearance:none;border:1px solid var(--card-line);
+    background:linear-gradient(180deg,#26356e,#1a2650);color:var(--ink);
+    font:inherit;font-size:1rem;padding:15px 18px;border-radius:999px;cursor:pointer;
+    min-height:52px;letter-spacing:.05em;text-align:center;text-decoration:none;
+    box-shadow:0 6px 18px rgba(2,6,24,.4);
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:linear-gradient(180deg,#3b4f9e,#27366e);border-color:rgba(200,212,255,.4)}
+  .btn.ghost{background:transparent;box-shadow:none;color:var(--ink-dim)}
+  .btn + .btn{margin-top:12px}
+
+  label.field{display:block;margin-bottom:18px}
+  label.field > span{display:block;font-size:.95rem;color:var(--accent);margin-bottom:6px;letter-spacing:.03em}
+  label.field > small{display:block;color:var(--ink-faint);font-size:.8rem;margin-top:4px;line-height:1.6}
+  input[type="text"],input[type="number"],textarea{
+    width:100%;appearance:none;border:1px solid var(--card-line);border-radius:12px;
+    background:rgba(7,12,34,.65);color:var(--ink);
+    font:inherit;font-size:1rem;line-height:1.7;padding:13px 14px;min-height:50px;
+  }
+  textarea{min-height:96px;resize:vertical}
+  input:focus,textarea:focus{outline:2px solid rgba(160,180,255,.55);outline-offset:1px}
+
+  .story-text p{
+    font-family:"Hiragino Mincho ProN","Hiragino Mincho","Yu Mincho","YuMincho",serif;
+    font-size:1.06rem;line-height:2.15;letter-spacing:.03em;margin-bottom:18px;
+  }
+  .story-text p:last-child{margin-bottom:0}
+  .fade-p{opacity:0;transform:translateY(10px);transition:opacity 1.4s ease,transform 1.4s ease}
+  .fade-p.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion: reduce){.fade-p{transition:none;opacity:1;transform:none}}
+
+  .streak{text-align:center;color:var(--ink-faint);font-size:.88rem;letter-spacing:.06em;margin:4px 0 18px}
+  .streak b{color:var(--gold);font-weight:600}
+
+  .entry{border-top:1px dashed rgba(160,175,230,.25);padding:14px 2px}
+  .entry:first-of-type{border-top:0}
+  .entry .date{font-size:.8rem;color:var(--ink-faint);letter-spacing:.06em}
+  .entry .text{margin-top:2px;white-space:pre-wrap;word-break:break-word}
+  .saved-note{color:var(--gold);font-size:.9rem;text-align:center;min-height:1.6em;margin-top:8px}
+
+  .notice{
+    border:1px solid rgba(233,217,166,.35);background:rgba(60,50,16,.25);
+    border-radius:12px;padding:14px 16px;font-size:.92rem;color:#f0e6c8;margin-top:16px;
+  }
+  footer{position:relative;z-index:1;text-align:center;color:var(--ink-faint);font-size:.78rem;padding:0 20px 40px;letter-spacing:.05em}
+  .hidden{display:none !important}
+</style>
+</head>
+<body>
+<div class="stars" aria-hidden="true"></div>
+<div class="wrap">
+
+  <header class="site-head">
+    <div class="site-title">二周目の今日</div>
+    <div class="site-sub">― 未来から戻ってきた自分として生きる ―</div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="ページ切り替え">
+    <button type="button" data-view="home" role="tab" aria-selected="true">トップ</button>
+    <button type="button" data-view="story" role="tab" aria-selected="false">物語をつくる</button>
+    <button type="button" data-view="today" role="tab" aria-selected="false">今日の想起</button>
+    <button type="button" data-view="about" role="tab" aria-selected="false">しくみ</button>
+  </nav>
+
+  <!-- トップ -->
+  <section class="view active" id="view-home">
+    <div class="card">
+      <p class="lead">あなたは、<span class="glow">未来から戻ってきた</span>。</p>
+      <p class="dim" style="text-align:center">
+        どうしても、この時期をもう一度生きたくて。<br>
+        今日は、二周目の一日です。
+      </p>
+    </div>
+    <div class="card">
+      <p>
+        このサイトは、「未来の自分が戻ってきた」という物語を<strong>自分で作り</strong>、
+        毎朝それを思い出すための小さな道具です。
+      </p>
+      <p class="dim">
+        もちろん、これは事実ではありません。タイムトラベルはできません。
+        でも、「これは自分で選んだ物語だ」と分かったうえで使うなら、
+        今日という一日の見え方は、少しだけ変わるかもしれません。
+      </p>
+      <div id="home-cta"></div>
+    </div>
+    <p class="small" style="text-align:center">
+      書いた内容は、この端末の中だけに保存されます。どこかへ送信されることはありません。
+    </p>
+  </section>
+
+  <!-- 物語をつくる -->
+  <section class="view" id="view-story">
+    <div class="card">
+      <h2>物語をつくる</h2>
+      <p class="dim">
+        未来の自分のつもりで、静かに答えてみてください。
+        きれいに書こうとしなくて大丈夫です。あとからいつでも直せます。
+      </p>
+      <form id="story-form" novalidate>
+        <label class="field">
+          <span>何歳の自分から、戻ってきましたか</span>
+          <input type="number" id="f-age" inputmode="numeric" min="1" max="120" placeholder="例：30">
+        </label>
+        <label class="field">
+          <span>未来で、後悔していたことは何ですか</span>
+          <textarea id="f-regret" placeholder="例：勉強ばかりで、家族との時間を大切にしなかったこと"></textarea>
+        </label>
+        <label class="field">
+          <span>戻ってきてまで、もう一度見たかったものは何ですか</span>
+          <textarea id="f-wanted" placeholder="例：夕ごはんのときの、家族の笑い声"></textarea>
+        </label>
+        <label class="field">
+          <span>二周目で大事にしたいこと（1つ目）</span>
+          <input type="text" id="f-p1" placeholder="例：目の前の人の話を、最後まで聞く">
+        </label>
+        <label class="field">
+          <span>二周目で大事にしたいこと（2つ目）</span>
+          <input type="text" id="f-p2" placeholder="例：今日の空を、一度は見る">
+        </label>
+        <label class="field">
+          <span>二周目で大事にしたいこと（3つ目）</span>
+          <input type="text" id="f-p3" placeholder="例：がんばる日と、休む日を分ける">
+          <small>3つすべて埋めなくても大丈夫です。</small>
+        </label>
+        <label class="field">
+          <span>未来の自分から、今の自分へのひとこと</span>
+          <textarea id="f-message" placeholder="例：大丈夫。あなたはちゃんと、あの場所へたどり着くから"></textarea>
+        </label>
+        <p class="saved-note" id="story-form-note" aria-live="polite"></p>
+        <button class="btn primary" type="submit">物語を組み立てて保存する</button>
+      </form>
+    </div>
+    <div class="card hidden" id="story-preview-card">
+      <h2>あなたの物語</h2>
+      <div class="story-text" id="story-preview"></div>
+      <p class="small" style="margin-top:16px">この物語は保存されています。上のフォームで直して保存し直すと、書き換わります。</p>
+      <button class="btn" type="button" id="goto-today">今日の想起へ</button>
+    </div>
+  </section>
+
+  <!-- 今日の想起 -->
+  <section class="view" id="view-today">
+    <p class="streak" id="streak-line"></p>
+    <div class="card" id="today-nostory">
+      <p>まだ物語がありません。まずは物語を作ると、ここに毎日の想起が表示されます。</p>
+      <button class="btn primary" type="button" id="goto-story">物語をつくる</button>
+    </div>
+    <div class="hidden" id="today-main">
+      <div class="card">
+        <h2>今日の想起</h2>
+        <p class="small" id="today-date" style="margin-bottom:16px"></p>
+        <div class="story-text" id="today-story"></div>
+      </div>
+      <div class="card">
+        <label class="field" style="margin-bottom:10px">
+          <span>二周目の自分として、今日大事にしたいことは？</span>
+          <input type="text" id="today-input" placeholder="1行だけ。短くて大丈夫です">
+        </label>
+        <button class="btn primary" type="button" id="today-save">今日の記録として保存する</button>
+        <p class="saved-note" id="today-note" aria-live="polite"></p>
+      </div>
+      <div class="card">
+        <h2>これまでの記録</h2>
+        <div id="entries-list"></div>
+        <p class="small hidden" id="entries-empty">まだ記録がありません。今日の1行が、最初の記録になります。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- しくみ -->
+  <section class="view" id="view-about">
+    <div class="card">
+      <h2>しくみ ― なぜ「物語」が効くのか</h2>
+      <p class="dim">
+        このサイトの土台にある考え方を、できるだけ正確に、やさしく書いておきます。
+        どれも「絶対に効く」という話ではありません。知ったうえで使うための、読みものです。
+      </p>
+
+      <h3>1. 記憶は、思い出すたびに保存し直される</h3>
+      <p>
+        脳の記憶は、録画したビデオのように固定されているわけではありません。
+        思い出すと、その記憶はいったん不安定な状態になり、また保存し直されます。
+        これを「再固定化（さいこていか）」と呼びます。
+        つまり、思い出し方によって、記憶にくっついている感情や意味は、少しずつ変わりうるのです。
+      </p>
+
+      <h3>2. 何度も想像したことは「本当にあった気」がしやすくなる</h3>
+      <p>
+        心理学者エリザベス・ロフタスらの研究では、起きていない出来事でも、
+        詳しく何度も想像すると「それ、本当にあったかもしれない」と感じやすくなることが示されています。
+        「想像膨張（イマジネーション・インフレーション）」と呼ばれる現象です。
+        未来の物語を毎日思い出すこのサイトも、同じ仕組みの上にあります。
+        だからこそ、これは「物語だ」と分かったうえで使うことが大切です。
+      </p>
+
+      <h3>3. 人は、自分の人生をどう語るかで、自分を形づくる</h3>
+      <p>
+        心理学には「ナラティブ・アイデンティティ」という考え方があります。
+        人は、自分の人生の出来事を一つの物語として語ることで、「自分は何者か」を形づくっていく、という見方です。
+        同じ一日でも、「失敗ばかりの時期」と語るか、「二周目をていねいに生きている時期」と語るかで、
+        次に取る行動は変わってきます。
+      </p>
+
+      <h3>4. 「二度目に生きているかのように」生きる</h3>
+      <p>
+        精神科医ヴィクトール・フランクルは、おおよそ次のような考え方を残しました。
+        人生を、すでに一度生きて、しかもその一度目で取り返しのつかない間違いをしてしまった——
+        そう想像しながら「二度目」を生きるつもりでいることが、今この瞬間の選択を真剣なものにする、という考え方です。
+        このサイトの「二周目」は、その考え方を借りています。
+      </p>
+
+      <div class="notice">
+        <strong>大事な注意。</strong>
+        ここで変えようとしているのは、過去の「事実」ではなく、過去と今日の「意味」です。
+        実際に起きたことを「なかったこと」にしたり、起きていないことを「本当にあった」と思い込んだりするための道具ではありません。
+        物語だと分かったうえで使う——それが、このサイトの一貫した立場です。
+      </div>
+      <p class="small" style="margin-top:14px">
+        ※ このサイトは、医療や心理療法の代わりになるものではありません。
+        つらい気持ちが続くときは、学校の相談室や、信頼できる大人、専門の相談窓口に話してみてください。
+      </p>
+    </div>
+  </section>
+
+</div>
+<footer>二周目の今日 ― データはこの端末の中だけに保存されます</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- 保存（localStorage） ---------- */
+  var KEY_STORY = "nishuume.story.v1";
+  var KEY_ENTRIES = "nishuume.entries.v1";
+  var KEY_RECALL = "nishuume.recall.v1";
+
+  function load(key, fallback){
+    try{
+      var raw = localStorage.getItem(key);
+      if(raw === null || raw === undefined) return fallback;
+      var v = JSON.parse(raw);
+      return (v === null || v === undefined) ? fallback : v;
+    }catch(e){ return fallback; }
+  }
+  function save(key, value){
+    try{ localStorage.setItem(key, JSON.stringify(value)); return true; }
+    catch(e){ return false; }
+  }
+
+  function todayStr(d){
+    d = d || new Date();
+    var m = ("0" + (d.getMonth()+1)).slice(-2);
+    var day = ("0" + d.getDate()).slice(-2);
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
+  function prettyDate(s){
+    var p = s.split("-");
+    if(p.length !== 3) return s;
+    var d = new Date(Number(p[0]), Number(p[1])-1, Number(p[2]));
+    var w = "日月火水木金土"[d.getDay()];
+    return Number(p[0]) + "年" + Number(p[1]) + "月" + Number(p[2]) + "日（" + w + "）";
+  }
+  function esc(s){
+    return String(s == null ? "" : s)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+  function trim(s){ return String(s == null ? "" : s).replace(/^\s+|\s+$/g,""); }
+
+  /* ---------- 画面切り替え ---------- */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll("nav.tabs button"));
+  var views = {
+    home: document.getElementById("view-home"),
+    story: document.getElementById("view-story"),
+    today: document.getElementById("view-today"),
+    about: document.getElementById("view-about")
+  };
+  function show(name){
+    Object.keys(views).forEach(function(k){
+      views[k].classList.toggle("active", k === name);
+    });
+    tabs.forEach(function(b){
+      b.setAttribute("aria-selected", b.getAttribute("data-view") === name ? "true" : "false");
+    });
+    if(name === "home") renderHome();
+    if(name === "story") renderStoryForm();
+    if(name === "today") renderToday();
+    try{ window.scrollTo({top:0, behavior:"smooth"}); }catch(e){ window.scrollTo(0,0); }
+  }
+  tabs.forEach(function(b){
+    b.addEventListener("click", function(){ show(b.getAttribute("data-view")); });
+  });
+  document.getElementById("goto-today").addEventListener("click", function(){ show("today"); });
+  document.getElementById("goto-story").addEventListener("click", function(){ show("story"); });
+
+  /* ---------- 物語 ---------- */
+  function getStory(){ return load(KEY_STORY, null); }
+
+  function buildParagraphs(inp){
+    var ps = [];
+    var age = trim(inp.age), regret = trim(inp.regret), wanted = trim(inp.wanted);
+    var precious = [trim(inp.p1), trim(inp.p2), trim(inp.p3)].filter(function(x){ return x !== ""; });
+    var message = trim(inp.message);
+
+    var first = "わたしは、未来から戻ってきた。";
+    if(age) first = "わたしは、" + age + "歳の未来から、この時期に戻ってきた。";
+    first += "どうしてもこの毎日を、もう一度生きたくて。今日は、二周目の一日である。";
+    ps.push(first);
+
+    var second = "";
+    if(regret) second += "一度目の人生では、" + regret + "ことが、未来のわたしの心にずっと残っていた。";
+    if(wanted) second += "そして、" + wanted + "を、もう一度この目で見たくて戻ってきた。";
+    if(second) ps.push(second);
+
+    if(precious.length){
+      ps.push("二周目のわたしが大事にしたいのは、" + precious.join("こと。そして、") + "こと。一度目では気づけなかった小さな光を、今度は見落とさない。");
+    }
+
+    if(message) ps.push("未来のわたしから、今のわたしへ。「" + message + "」");
+
+    ps.push("これは、事実ではない。自分で選んだ物語だ。けれど、今日をどう生きるかは、本当に選べる。さあ、二周目の今日を始めよう。");
+    return ps;
+  }
+
+  function renderStoryInto(el, paragraphs, fade){
+    el.innerHTML = "";
+    paragraphs.forEach(function(t){
+      var p = document.createElement("p");
+      p.textContent = t;
+      if(fade) p.className = "fade-p";
+      el.appendChild(p);
+    });
+    if(fade){
+      var reduced = false;
+      try{ reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){}
+      var ps = el.querySelectorAll(".fade-p");
+      Array.prototype.forEach.call(ps, function(p, i){
+        if(reduced){ p.classList.add("in"); return; }
+        setTimeout(function(){ p.classList.add("in"); }, 500 + i * 1600);
+      });
+    }
+  }
+
+  /* トップ */
+  function renderHome(){
+    var cta = document.getElementById("home-cta");
+    var story = getStory();
+    cta.innerHTML = "";
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn primary";
+    if(story){
+      btn.textContent = "今日の想起へ";
+      btn.addEventListener("click", function(){ show("today"); });
+      var note = document.createElement("p");
+      note.className = "small";
+      note.style.marginTop = "10px";
+      note.style.textAlign = "center";
+      note.textContent = "物語は保存されています。「物語をつくる」から、いつでも直せます。";
+      cta.appendChild(btn); cta.appendChild(note);
+    }else{
+      btn.textContent = "物語をつくる";
+      btn.addEventListener("click", function(){ show("story"); });
+      cta.appendChild(btn);
+    }
+  }
+
+  /* 物語フォーム */
+  var fields = {
+    age: document.getElementById("f-age"),
+    regret: document.getElementById("f-regret"),
+    wanted: document.getElementById("f-wanted"),
+    p1: document.getElementById("f-p1"),
+    p2: document.getElementById("f-p2"),
+    p3: document.getElementById("f-p3"),
+    message: document.getElementById("f-message")
+  };
+  function renderStoryForm(){
+    var story = getStory();
+    var card = document.getElementById("story-preview-card");
+    if(story && story.inputs){
+      Object.keys(fields).forEach(function(k){
+        if(fields[k].value === "") fields[k].value = story.inputs[k] || "";
+      });
+      renderStoryInto(document.getElementById("story-preview"), story.paragraphs || [], false);
+      card.classList.remove("hidden");
+    }else{
+      card.classList.add("hidden");
+    }
+  }
+  document.getElementById("story-form").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var inp = {};
+    Object.keys(fields).forEach(function(k){ inp[k] = fields[k].value; });
+    var paragraphs = buildParagraphs(inp);
+    var ok = save(KEY_STORY, { inputs: inp, paragraphs: paragraphs, updatedAt: todayStr() });
+    var note = document.getElementById("story-form-note");
+    note.textContent = ok ? "保存しました。下に、あなたの物語が表示されます。" : "保存できませんでした。端末の空き容量やブラウザの設定を確認してください。";
+    renderStoryInto(document.getElementById("story-preview"), paragraphs, false);
+    document.getElementById("story-preview-card").classList.remove("hidden");
+    try{ document.getElementById("story-preview-card").scrollIntoView({behavior:"smooth"}); }catch(e){}
+  });
+
+  /* ---------- 今日の想起 ---------- */
+  function getEntries(){ var e = load(KEY_ENTRIES, []); return Array.isArray(e) ? e : []; }
+  function getRecall(){ var r = load(KEY_RECALL, []); return Array.isArray(r) ? r : []; }
+
+  function computeStreak(days){
+    var set = {};
+    days.forEach(function(d){ set[d] = true; });
+    var cur = new Date();
+    if(!set[todayStr(cur)]) cur.setDate(cur.getDate() - 1);
+    var streak = 0;
+    while(set[todayStr(cur)]){
+      streak++;
+      cur.setDate(cur.getDate() - 1);
+    }
+    return streak;
+  }
+
+  function renderToday(){
+    var story = getStory();
+    var noStory = document.getElementById("today-nostory");
+    var main = document.getElementById("today-main");
+    var streakLine = document.getElementById("streak-line");
+
+    if(!story){
+      noStory.classList.remove("hidden");
+      main.classList.add("hidden");
+      streakLine.textContent = "";
+      return;
+    }
+    noStory.classList.add("hidden");
+    main.classList.remove("hidden");
+
+    /* 今日の想起として記録（連続日数のため） */
+    var recall = getRecall();
+    var t = todayStr();
+    if(recall.indexOf(t) === -1){ recall.push(t); save(KEY_RECALL, recall); }
+    var streak = computeStreak(recall);
+    streakLine.innerHTML = streak > 0
+      ? "二周目の想起は、<b>" + streak + "日</b> つづいています"
+      : "";
+
+    document.getElementById("today-date").textContent = prettyDate(t) + " ― 二周目の今日";
+    renderStoryInto(document.getElementById("today-story"), story.paragraphs || [], true);
+
+    /* 今日の入力欄：今日分があれば入れておく */
+    var entries = getEntries();
+    var todayEntry = null;
+    entries.forEach(function(e){ if(e.date === t) todayEntry = e; });
+    var input = document.getElementById("today-input");
+    input.value = todayEntry ? (todayEntry.text || "") : "";
+    document.getElementById("today-note").textContent = "";
+
+    renderEntries(entries);
+  }
+
+  function renderEntries(entries){
+    var list = document.getElementById("entries-list");
+    var empty = document.getElementById("entries-empty");
+    list.innerHTML = "";
+    if(!entries.length){ empty.classList.remove("hidden"); return; }
+    empty.classList.add("hidden");
+    var sorted = entries.slice().sort(function(a,b){ return a.date < b.date ? 1 : -1; });
+    sorted.forEach(function(e){
+      var div = document.createElement("div");
+      div.className = "entry";
+      var d = document.createElement("div");
+      d.className = "date";
+      d.textContent = prettyDate(e.date);
+      var tx = document.createElement("div");
+      tx.className = "text";
+      tx.textContent = e.text || "";
+      div.appendChild(d); div.appendChild(tx);
+      list.appendChild(div);
+    });
+  }
+
+  document.getElementById("today-save").addEventListener("click", function(){
+    var input = document.getElementById("today-input");
+    var text = trim(input.value);
+    var note = document.getElementById("today-note");
+    if(!text){ note.textContent = "1行だけ、書いてみてください。"; return; }
+    var t = todayStr();
+    var entries = getEntries().filter(function(e){ return e.date !== t; });
+    entries.push({ date: t, text: text });
+    var ok = save(KEY_ENTRIES, entries);
+    note.textContent = ok ? "保存しました。今日も、二周目の一日を。" : "保存できませんでした。";
+    if(ok) renderEntries(entries);
+  });
+
+  /* 初期表示 */
+  renderHome();
+})();
+</script>
+</body>
+</html>
