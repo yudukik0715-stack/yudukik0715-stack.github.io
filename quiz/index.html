@@ -286,8 +286,7 @@ function finish(){
   $("review").innerHTML = QUESTIONS.map((q, i) => `
     <div class="rv">
       <p class="q">Q${i + 1}. ${q.text}</p>
-      <p class="a"><span class="tag ${results[i] ? "ok" : "ng"}">${results[i] ? "せいかい" : "ざんねん"}</span>${ordered(q, q.answer).join("、")}
-      ${results[i] ? "" : `<br><span class="yours">あなたの答え：${ordered(q, picks[i]).join("、")}</span>`}</p>
+      <p class="a"><span class="tag ${results[i] ? "ok" : "ng"}">${results[i] ? "せいかい" : "ざんねん"}</span></p>
     </div>`).join("");
   show("s-res", "けっか.txt");
   setTimeout(() => popup(pt, n), 350);
