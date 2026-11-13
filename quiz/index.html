@@ -211,12 +211,8 @@ const QUESTIONS = [
     answer: ["ととまる・みる"], multi: false }
 ];
 
-/* ===== 結果の送信先（Googleフォーム）: formUrl が空なら送らない ===== */
-const FORM = {
-  formUrl: "",
-  nick: "", score: "",
-  ans: ["", "", ""]
-};
+/* ===== 結果の送信先（Lovableの結果ノート） ===== */
+const SUBMIT_URL = "https://yuzuki-quiz-note.lovable.app/api/public/submit-result";
 
 /* ===== 動き ===== */
 const $ = id => document.getElementById(id);
@@ -330,13 +326,15 @@ function confetti(){
 }
 
 function send(pt, n){
-  if (!FORM.formUrl) return;
-  const fd = new FormData();
-  fd.append(FORM.nick, nick);
-  fd.append(FORM.score, `${pt}/${n}`);
-  QUESTIONS.forEach((q, i) => { if (FORM.ans[i]) fd.append(FORM.ans[i], ordered(q, picks[i]).join("、")); });
-  fetch(FORM.formUrl, { method: "POST", mode: "no-cors", body: fd })
-    .then(() => { $("sent").textContent = "けっかをゆづきに送ったよ ✉"; })
+  const body = { nickname: nick, score: `${pt}/${n}` };
+  QUESTIONS.forEach((q, i) => { body["q" + (i + 1)] = ordered(q, picks[i]).join("、"); });
+  fetch(SUBMIT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  })
+    .then(r => r.json())
+    .then(d => { if (d.ok) $("sent").textContent = "けっかをゆづきに送ったよ ✉"; })
     .catch(() => {});
 }
 </script>
