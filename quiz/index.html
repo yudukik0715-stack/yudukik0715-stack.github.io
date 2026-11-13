@@ -26,7 +26,7 @@
 
   /* スタート */
   .grade{text-align:center;font-size:15px;font-weight:700;letter-spacing:.25em}
-  .big{text-align:center;font-family:"Outfit",sans-serif;font-weight:800;font-size:96px;line-height:1;letter-spacing:-.02em;margin:6px 0 20px}
+  .big{text-align:center;font-family:"Outfit",sans-serif;font-weight:800;font-size:96px;line-height:1;letter-spacing:-.02em;margin:6px 0 34px}
   .pets{display:flex;justify-content:center;align-items:flex-end;gap:14px;margin:0 0 26px}
   .pets svg{width:64px;height:64px;display:block;image-rendering:pixelated}
   .hop svg{animation:hop 1.1s steps(2) infinite}
@@ -113,7 +113,6 @@
   <section class="screen on" id="s-start">
     <p class="grade">ゆづき検定 3級</p>
     <h1 class="big">Quiz</h1>
-    <div class="pets hop" id="startPets"></div>
     <label class="lb" for="nick">ニックネーム</label>
     <input type="text" id="nick" maxlength="20" placeholder="ここに入力" autocomplete="off">
     <button class="btn" id="startBtn" disabled>はじめる</button>
@@ -175,17 +174,6 @@ const QUESTIONS = [
 /* ===== 結果の送信先（Lovableの結果ノート） ===== */
 const SUBMIT_URL = "https://yuzuki-quiz-note.lovable.app/api/public/submit-result";
 
-/* ===== ドット絵（ととまる・みる） ===== */
-const PAL = {O:"#2b2b2b",K:"#3d2e28",T:"#c8894d",N:"#120b08",E:"#ffffff",B:"#33416e",Y:"#d9b45a",W:"#f3ece0",P:"#e3a1a6"};
-const DOG = ["........OOOOOOOO........","......OOKKKKKKKKOO......","....OOKKKKKKKKKKKKOO....","...OKKKKKKKKKKKKKKKKO...","..OKKKKTTKKKKKKTTKKKKO..","..OKKKKKKKKKKKKKKKKKKO..",".OKKKKKNEKKKKKKNEKKKKKO.",".OKKKKKNNKKKKKKNNKKKKKO.",".OKKKKKKKTKKKKTKKKKKKKO.","OKKKKKKKTTTKKTTTKKKKKKKO","OKKKKKKTTTTNNTTTTKKKKKKO","OKKKKKKTTTNNNNTTTKKKKKKO","OKKKKKKOTTTNNTTTOKKKKKKO","OKKKKKO.OTTTTTTO.OKKKKKO",".OKKKKO.OKKKKKKO.OKKKKO.",".OKKKO.OBBKKKKBBO.OKKKO.","..OOO.OKBBBYYBBBKO.OOO..","......OKKBBYYBBKKO......",".....OKKKKBBBBKKKKO.....",".....OKKKKKBBKKKKKO.....",".....OKKKKKBBKKKKKO.....",".....OKTTKKKKKKTTKO.....",".....OTTTTOOOOTTTTO.....","......OOOO....OOOO......"];
-const RABBIT = [".......OOO....OOO.......", "......OKKKO..OKKKO......", "......OKPKO..OKKKO......", "......OKPKO..OKKKO......", "......OKPKO.OKKKO.......", "......OKPKO.OKKKO.......", ".......OKPKOKKKO........", ".......OKKKKKKKO........", ".....OOKKKKKKKKKOO......", "....OKKKKKKKKKKKKKO.....", "...OKKKKKKKKKKKKKKKO....", "...OKKKKKKKKKKKKKKKO....", "...OKKWNEKKKKKWNEKKO....", "...OKKWNNKKKKKWNNKKO....", "...OKKKWWKKKKKKWWKKO....", "...OKKKKKKKWPWKKKKKO....", "....OKKKKKKWWWKKKKO.....", "...OOKKKKKKKWKKKKKKOO...", "..OKKKKKKKKKKKKKKKKKKO..", "..OKKKKKKKKWWWKKKKKKKKO.", "..OKKKKKKKWWWWWKKKKKKKO.", "..OKKKKKKKKWWWKKKKKKKKO.", "...OKWWWKKKKKKKKKWWWKO..", "....OOOOOOOOOOOOOOOOO..."];
-function sprite(map){
-  let r = "";
-  map.forEach((row, y) => [...row].forEach((c, x) => { if (PAL[c]) r += `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${PAL[c]}"/>`; }));
-  return `<svg viewBox="0 0 24 24" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">${r}</svg>`;
-}
-const PETS = sprite(DOG) + sprite(RABBIT);
-document.getElementById("startPets").innerHTML = PETS;
 
 /* くるくる */
 document.getElementById("spin").innerHTML = Array.from({length: 12}, (_, i) =>
@@ -281,7 +269,6 @@ function popup(pt, n, msg){
     dlg.innerHTML = `
       <p class="kicker">CERTIFIED</p>
       <p class="m1">貴方は<br>ゆづきマスターです</p>
-      <div class="pets hop">${PETS}</div>
       <p style="font-size:13px;color:var(--gray)">ゆづき検定 3級 合格</p>
       <button class="btn" id="okBtn">OK</button>`;
     setTimeout(confetti, 250);
@@ -290,7 +277,6 @@ function popup(pt, n, msg){
     dlg.innerHTML = `
       <p class="kicker">ALMOST</p>
       <p class="m1">${msg}</p>
-      <div class="pets">${PETS}</div>
       <button class="btn" id="okBtn">OK</button>`;
   } else {
     dlg.classList.add("shake");
