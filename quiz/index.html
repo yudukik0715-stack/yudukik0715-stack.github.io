@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>ゆづきクイズ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yomogi&family=Klee+One:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f5ead7; --paper2:#efe0c6;
+    --brown:#6e4b3a; --brown-l:#a07a62; --brown-xl:#d9c2a6;
+    --pink:#e3a1a6; --pink-l:#f3d1cf;
+    --sky:#9fc6d4; --sky-l:#d3e7ec;
+    --card:#fbf4e8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Yomogi","Klee One",-apple-system,"Hiragino Maru Gothic ProN",sans-serif;
+    color:var(--brown);
+    background-color:var(--paper);
+    background-image:
+      radial-gradient(var(--paper2) 1.2px, transparent 1.3px),
+      radial-gradient(var(--paper2) 1.2px, transparent 1.3px);
+    background-size:18px 18px; background-position:0 0, 9px 9px;
+    min-height:100vh; min-height:100dvh;
+    display:flex; justify-content:center; align-items:flex-start;
+    padding:30px 16px calc(30px + env(safe-area-inset-bottom));
+    -webkit-text-size-adjust:100%; overflow-x:hidden;
+  }
+  .wrap{width:100%;max-width:430px;position:relative}
+
+  /* カード：レトロなチケット風 */
+  .card{
+    position:relative;background:var(--card);
+    border:2.5px solid var(--brown);border-radius:22px;
+    padding:30px 22px 26px;
+    box-shadow:6px 6px 0 var(--brown-xl);
+  }
+  .card::before{ /* 内側の点線フチ */
+    content:"";position:absolute;inset:8px;border:1.5px dashed var(--brown-xl);border-radius:16px;pointer-events:none;
+  }
+  .tape{
+    position:absolute;top:-14px;left:50%;transform:translateX(-50%) rotate(-3deg);
+    width:110px;height:28px;background:var(--sky);opacity:.85;
+    background-image:repeating-linear-gradient(90deg,#ffffff55 0 6px,transparent 6px 12px);
+  }
+
+  .screen{display:none;position:relative;animation:pop .4s ease}
+  .screen.on{display:block}
+  @keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  h1{font-family:"Klee One",serif;font-weight:600;font-size:32px;text-align:center;letter-spacing:.08em;line-height:1.3}
+  h1 .p{color:var(--pink)} h1 .s{color:var(--sky)}
+  .deco{text-align:center;font-size:15px;letter-spacing:.4em;color:var(--brown-l);margin:2px 0 4px}
+  .sub{text-align:center;font-size:17px;margin:12px 0 26px;line-height:1.8}
+
+  label.lb{display:block;font-size:16px;margin-bottom:8px}
+  input[type=text]{
+    width:100%;font-family:inherit;font-size:19px;padding:12px 16px;border-radius:14px;
+    border:2px solid var(--brown);background:#fffaf1;color:var(--brown);outline:none;
+  }
+  input[type=text]::placeholder{color:var(--brown-xl)}
+  input[type=text]:focus{box-shadow:0 0 0 4px var(--pink-l)}
+
+  .btn{
+    display:block;width:100%;margin-top:24px;padding:13px;
+    font-family:inherit;font-size:20px;letter-spacing:.1em;
+    color:#fffaf1;background:var(--brown);
+    border:2.5px solid var(--brown);border-radius:999px;cursor:pointer;
+    box-shadow:0 5px 0 var(--brown-l);transition:transform .08s, box-shadow .08s, opacity .2s;
+  }
+  .btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--brown-l)}
+  .btn:disabled{opacity:.35}
+
+  .prog{display:flex;gap:8px;justify-content:center;margin-bottom:16px}
+  .prog i{width:12px;height:12px;border-radius:50%;border:2px solid var(--brown);background:transparent}
+  .prog i.on{background:var(--pink)}
+  .qn{text-align:center;font-family:"Klee One",serif;font-weight:600;font-size:15px;letter-spacing:.2em;color:var(--brown-l)}
+  .qt{text-align:center;font-size:24px;margin:4px 0 4px;line-height:1.5}
+  .hint{text-align:center;font-size:15px;color:var(--brown-l);margin-bottom:18px}
+
+  .opts{display:grid;gap:10px}
+  .opts.two{grid-template-columns:1fr 1fr}
+  .opt{
+    font-family:inherit;font-size:18px;color:var(--brown);
+    padding:12px 10px;border-radius:14px;border:2px solid var(--brown);
+    background:#fffaf1;cursor:pointer;-webkit-tap-highlight-color:transparent;
+    transition:transform .1s, background .15s;
+  }
+  .opt:nth-child(3n+1).sel{background:var(--pink-l)}
+  .opt:nth-child(3n+2).sel{background:var(--sky-l)}
+  .opt:nth-child(3n).sel{background:#ead9c3}
+  .opt.sel{transform:rotate(-1.5deg) scale(1.02);box-shadow:3px 3px 0 var(--brown)}
+
+  /* 結果 */
+  .resName{text-align:center;font-size:16px;color:var(--brown-l)}
+  .score{text-align:center;font-family:"Klee One",serif;font-weight:600;font-size:60px;line-height:1.1;margin:6px 0}
+  .score small{font-size:24px;color:var(--brown-l)}
+  .title{
+    text-align:center;font-size:25px;line-height:1.5;margin:6px 0 22px;
+    opacity:0;
+  }
+  .title.show{animation:titleIn .6s cubic-bezier(.2,1.6,.4,1) forwards}
+  @keyframes titleIn{from{opacity:0;transform:scale(.6) rotate(-4deg)}to{opacity:1;transform:none}}
+  .title.shake.show{animation:titleIn .6s cubic-bezier(.2,1.6,.4,1) forwards, wobble .5s .7s ease 2}
+  @keyframes wobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}
+
+  .rv{border-top:2px dashed var(--brown-xl);padding:13px 2px}
+  .rv .q{font-size:15px;color:var(--brown-l)}
+  .rv .a{font-size:17px;margin-top:3px;line-height:1.6}
+  .tag{display:inline-block;font-size:14px;border:2px solid var(--brown);border-radius:999px;padding:0 10px;margin-right:6px}
+  .tag.ok{background:var(--sky-l)} .tag.ng{background:var(--pink-l)}
+  .yours{font-size:14px;color:var(--brown-l)}
+  .sent{text-align:center;font-size:14px;color:var(--brown-l);margin-top:14px}
+  .again{margin-top:18px;background:transparent;color:var(--brown);box-shadow:0 5px 0 var(--brown-xl)}
+
+  /* ===== 全問正解モーション ===== */
+  .master{
+    position:fixed;inset:0;z-index:50;display:none;
+    align-items:center;justify-content:center;flex-direction:column;
+    background:rgba(110,75,58,.35);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+  }
+  .master.on{display:flex}
+  .stamp{
+    position:relative;width:250px;height:250px;border-radius:50%;
+    background:var(--card);border:5px solid var(--pink);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+    color:var(--brown);box-shadow:0 0 0 8px var(--card), 0 0 0 11px var(--brown);
+    animation:stampIn .55s cubic-bezier(.3,1.7,.5,1) both;
+  }
+  .stamp::after{content:"";position:absolute;inset:12px;border-radius:50%;border:2px dashed var(--sky)}
+  .stamp .t1{font-size:18px}
+  .stamp .t2{font-family:"Klee One",serif;font-weight:600;font-size:34px;line-height:1.25;margin:4px 0}
+  .stamp .t2 b{color:var(--pink);font-weight:600}
+  .stamp .t3{font-size:18px}
+  .stamp .stars{font-size:18px;letter-spacing:.3em;color:var(--sky);margin-top:4px}
+  @keyframes stampIn{
+    0%{transform:scale(3) rotate(-25deg);opacity:0}
+    60%{transform:scale(.92) rotate(-8deg);opacity:1}
+    100%{transform:scale(1) rotate(-8deg)}
+  }
+  .master .tap{margin-top:34px;color:#fffaf1;font-size:16px;animation:blink 1.4s ease infinite}
+  @keyframes blink{50%{opacity:.4}}
+  .bit{position:fixed;top:-20px;z-index:51;pointer-events:none;will-change:transform}
+  .shake-screen{animation:shk .35s ease}
+  @keyframes shk{0%,100%{transform:none}20%{transform:translate(-6px,3px)}40%{transform:translate(5px,-4px)}60%{transform:translate(-4px,2px)}80%{transform:translate(3px,-2px)}}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <div class="card">
+    <div class="tape"></div>
+
+    <!-- スタート -->
+    <section class="screen on" id="s-start">
+      <p class="deco">✿ ✿ ✿</p>
+      <h1><span class="p">ゆづき</span><span class="s">クイズ</span></h1>
+      <p class="sub">わたしのこと、どれくらい知ってる？<br>ぜんぶで3問だよ</p>
+      <label class="lb" for="nick">あなたのニックネーム</label>
+      <input type="text" id="nick" maxlength="20" placeholder="ここに書いてね" autocomplete="off">
+      <button class="btn" id="startBtn" disabled>はじめる</button>
+    </section>
+
+    <!-- 問題 -->
+    <section class="screen" id="s-q">
+      <div class="prog" id="prog"></div>
+      <p class="qn" id="qn"></p>
+      <p class="qt" id="qt"></p>
+      <p class="hint" id="hint"></p>
+      <div class="opts" id="opts"></div>
+      <button class="btn" id="nextBtn" disabled>つぎへ</button>
+    </section>
+
+    <!-- 結果 -->
+    <section class="screen" id="s-res">
+      <p class="resName" id="resName"></p>
+      <div class="score" id="score"></div>
+      <p class="title" id="title"></p>
+      <div id="review"></div>
+      <p class="sent" id="sent"></p>
+      <button class="btn again" id="againBtn">もういちど</button>
+    </section>
+  </div>
+</div>
+
+<!-- 全問正解のスタンプ -->
+<div class="master" id="master">
+  <div class="stamp">
+    <p class="t1">貴方は</p>
+    <p class="t2"><b>ゆづき</b><br>マスター</p>
+    <p class="t3">です</p>
+    <p class="stars">★★★</p>
+  </div>
+  <p class="tap">タップしてとじる</p>
+</div>
+
+<script>
+/* ===== 問題 ===== */
+const QUESTIONS = [
+  { text: "好きなサンリオキャラクターは？",
+    options: ["キティ", "マイメロ", "シナモン", "クロミ"],
+    answer: ["シナモン"], multi: false },
+  { text: "家族構成は？",
+    options: ["ぱぱ", "まま", "姉", "妹", "兄", "弟", "犬", "猫", "うさぎ"],
+    answer: ["ぱぱ", "まま", "妹", "犬", "うさぎ"], multi: true },
+  { text: "ペットの名前は？",
+    options: ["モカ・カプチーノ", "ととまる・みる", "かのん・さちか", "りん・ゆめ"],
+    answer: ["ととまる・みる"], multi: false }
+];
+
+/* ===== 結果の送信先（Googleフォーム）: formUrl が空なら送らない ===== */
+const FORM = {
+  formUrl: "",
+  nick: "", score: "",
+  ans: ["", "", ""]
+};
+
+/* ===== 動き ===== */
+const $ = id => document.getElementById(id);
+let cur = 0, nick = "", picks = [];
+
+$("nick").addEventListener("input", e => { $("startBtn").disabled = !e.target.value.trim(); });
+$("startBtn").onclick = () => { nick = $("nick").value.trim(); cur = 0; picks = []; render(); };
+$("nextBtn").onclick = () => { cur++; cur < QUESTIONS.length ? render() : finish(); };
+$("againBtn").onclick = () => { cur = 0; picks = []; render(); };
+$("master").onclick = () => $("master").classList.remove("on");
+
+function show(id){
+  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id));
+  window.scrollTo(0, 0);
+}
+
+function render(){
+  const q = QUESTIONS[cur];
+  picks[cur] = [];
+  $("prog").innerHTML = QUESTIONS.map((_, i) => `<i class="${i <= cur ? "on" : ""}"></i>`).join("");
+  $("qn").textContent = `Q.${cur + 1}`;
+  $("qt").textContent = q.text;
+  $("hint").textContent = q.multi ? "あてはまるもの、ぜんぶえらんでね" : "ひとつえらんでね";
+  $("nextBtn").textContent = cur === QUESTIONS.length - 1 ? "けっかを見る" : "つぎへ";
+  $("nextBtn").disabled = true;
+  const box = $("opts");
+  box.className = "opts" + (q.options.length > 4 ? " two" : "");
+  box.innerHTML = "";
+  q.options.forEach(o => {
+    const b = document.createElement("button");
+    b.className = "opt"; b.textContent = o;
+    b.onclick = () => {
+      if (q.multi) {
+        const p = picks[cur], i = p.indexOf(o);
+        i < 0 ? p.push(o) : p.splice(i, 1);
+        b.classList.toggle("sel");
+      } else {
+        picks[cur] = [o];
+        box.querySelectorAll(".opt").forEach(x => x.classList.toggle("sel", x === b));
+      }
+      $("nextBtn").disabled = picks[cur].length === 0;
+      if (navigator.vibrate) navigator.vibrate(8);
+    };
+    box.appendChild(b);
+  });
+  show("s-q");
+}
+
+const same = (a, b) => a.length === b.length && a.every(x => b.includes(x));
+const ordered = (q, arr) => q.options.filter(o => arr.includes(o));
+
+function finish(){
+  const results = QUESTIONS.map((q, i) => same(picks[i], q.answer));
+  const pt = results.filter(Boolean).length, n = QUESTIONS.length;
+
+  $("resName").textContent = `${nick} さんのけっか`;
+  $("score").innerHTML = `${pt}<small> / ${n}</small>`;
+  const t = $("title");
+  t.className = "title";
+  t.textContent = pt === n ? "貴方はゆづきマスターです"
+                : pt === n - 1 ? "惜しい、本人に聞こう"
+                : "もっと話しかけろ";
+  if (pt < n - 1) t.classList.add("shake");
+
+  $("review").innerHTML = QUESTIONS.map((q, i) => `
+    <div class="rv">
+      <p class="q">Q.${i + 1} ${q.text}</p>
+      <p class="a"><span class="tag ${results[i] ? "ok" : "ng"}">${results[i] ? "せいかい" : "ざんねん"}</span>${ordered(q, q.answer).join("、")}
+      ${results[i] ? "" : `<br><span class="yours">あなたの答え：${ordered(q, picks[i]).join("、")}</span>`}</p>
+    </div>`).join("");
+
+  show("s-res");
+  requestAnimationFrame(() => setTimeout(() => t.classList.add("show"), 150));
+
+  if (pt === n) celebrate();
+  else if (pt < n - 1) {
+    $("wrap").classList.remove("shake-screen"); void $("wrap").offsetWidth;
+    setTimeout(() => $("wrap").classList.add("shake-screen"), 700);
+  }
+  send(pt, n);
+}
+
+/* 全問正解：スタンプ＋紙ふぶき */
+function celebrate(){
+  setTimeout(() => {
+    const m = $("master");
+    m.classList.remove("on"); void m.offsetWidth; m.classList.add("on");
+    if (navigator.vibrate) navigator.vibrate([30, 60, 30]);
+    setTimeout(confetti, 350);
+  }, 500);
+}
+function confetti(){
+  const shapes = ["♥", "★", "✿", "●", "■"];
+  const colors = ["#e3a1a6", "#9fc6d4", "#a07a62", "#f3d1cf", "#d3e7ec"];
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement("span");
+    s.className = "bit";
+    s.textContent = shapes[i % shapes.length];
+    s.style.left = Math.random() * 100 + "vw";
+    s.style.color = colors[Math.floor(Math.random() * colors.length)];
+    s.style.fontSize = (12 + Math.random() * 16) + "px";
+    document.body.appendChild(s);
+    const drift = (Math.random() - .5) * 160, rot = (Math.random() - .5) * 720;
+    const dur = 2200 + Math.random() * 1800;
+    s.animate([
+      { transform: "translate(0,0) rotate(0)", opacity: 1 },
+      { transform: `translate(${drift}px, 110vh) rotate(${rot}deg)`, opacity: .9 }
+    ], { duration: dur, delay: Math.random() * 600, easing: "cubic-bezier(.25,.6,.4,1)", fill: "forwards" })
+     .onfinish = () => s.remove();
+  }
+}
+
+function send(pt, n){
+  if (!FORM.formUrl) return;
+  const fd = new FormData();
+  fd.append(FORM.nick, nick);
+  fd.append(FORM.score, `${pt}/${n}`);
+  QUESTIONS.forEach((q, i) => { if (FORM.ans[i]) fd.append(FORM.ans[i], ordered(q, picks[i]).join("、")); });
+  fetch(FORM.formUrl, { method: "POST", mode: "no-cors", body: fd })
+    .then(() => { $("sent").textContent = "けっかをゆづきに送ったよ ✉"; })
+    .catch(() => {});
+}
+</script>
+</body>
+</html>
