@@ -112,23 +112,6 @@
   .boo{display:inline-block;font-family:"Outfit",sans-serif;font-weight:800;font-size:13px;letter-spacing:.15em;
     border:3px solid var(--ink);border-radius:999px;padding:1px 12px;transform:rotate(-6deg);margin-bottom:10px}
   .bit{position:fixed;top:-14px;z-index:60;pointer-events:none;background:var(--ink)}
-
-  /* ランキング */
-  .time{text-align:center;font-family:"Outfit",sans-serif;font-weight:600;font-size:15px;color:var(--gray);margin:-14px 0 20px}
-  .rank{margin:26px 0 4px;border:4px solid var(--ink);border-radius:16px;padding:16px 16px 12px}
-  .rank h2{font-family:"Outfit",sans-serif;font-weight:800;font-size:15px;letter-spacing:.25em;text-align:center;margin-bottom:10px}
-  .rk{display:flex;align-items:center;gap:12px;padding:9px 2px;border-top:3px solid var(--light)}
-  .rk:first-of-type{border-top:none}
-  .rk .no{flex:none;width:34px;height:34px;border:3px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;
-    font-family:"Outfit",sans-serif;font-weight:800;font-size:16px}
-  .rk.r1 .no{background:var(--ink);color:#fff}
-  .rk .nm{flex:1;min-width:0;font-size:16px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .rk .pt{font-family:"Outfit",sans-serif;font-weight:800;font-size:16px;white-space:nowrap}
-  .rk .tm{font-family:"Outfit",sans-serif;font-weight:600;font-size:12px;color:var(--gray);width:46px;text-align:right;white-space:nowrap}
-  .rk.me .nm::after{content:"YOU";margin-left:6px;font-family:"Outfit",sans-serif;font-size:10px;letter-spacing:.1em;border:2px solid var(--ink);border-radius:999px;padding:0 6px;vertical-align:2px}
-  .myrank{text-align:center;font-size:14px;font-weight:700;margin-top:10px}
-  .myrank b{font-family:"Outfit",sans-serif;font-weight:800;font-size:22px;margin:0 2px}
-  .rk-empty{text-align:center;font-size:13px;color:var(--gray);padding:6px 0}
 </style>
 </head>
 <body>
@@ -173,13 +156,7 @@
     <p class="rlabel" id="resName"></p>
     <div class="score" id="score"></div>
     <p class="title" id="title"></p>
-    <p class="time" id="time"></p>
     <div id="review"></div>
-    <div class="rank" id="rank" hidden>
-      <h2>RANKING</h2>
-      <div id="rankList"><p class="rk-empty">集計中...</p></div>
-      <p class="myrank" id="myRank"></p>
-    </div>
     <p class="sent" id="sent"></p>
     <button class="btn ghost" id="againBtn">もういちど</button>
   </section>
@@ -236,7 +213,7 @@ document.getElementById("secret").onclick = () => {
 
 /* ===== 動き ===== */
 const $ = id => document.getElementById(id);
-let cur = 0, nick = "", picks = [], t0 = 0, elapsed = 0;
+let cur = 0, nick = "", picks = [];
 
 $("nick").addEventListener("input", e => { $("startBtn").disabled = !e.target.value.trim(); });
 $("startBtn").onclick = () => { nick = $("nick").value.trim(); begin(); };
@@ -256,7 +233,7 @@ function begin(){
   requestAnimationFrame(() => requestAnimationFrame(() => {
     b.style.transition = "width 1.3s steps(9)"; b.style.width = "100%";
   }));
-  setTimeout(() => { t0 = performance.now(); render(); }, 1600);
+  setTimeout(render, 1600);
 }
 
 function render(){
@@ -296,7 +273,6 @@ const same = (a, b) => a.length === b.length && a.every(x => b.includes(x));
 const ordered = (q, arr) => q.options.filter(o => arr.includes(o));
 
 function judge(){
-  elapsed = Math.round(performance.now() - t0);
   show("s-judge");
   setTimeout(finish, 1800);
 }
@@ -310,10 +286,6 @@ function finish(){
   $("resName").textContent = `${nick} さんの結果`;
   $("score").innerHTML = `${pt}<small>/${n}</small>`;
   $("title").textContent = msg;
-  $("time").textContent = `TIME ${sec(elapsed)}`;
-  $("rank").hidden = true;
-  $("rankList").innerHTML = `<p class="rk-empty">集計中...</p>`;
-  $("myRank").textContent = "";
   $("review").innerHTML = QUESTIONS.map((q, i) => `
     <div class="rv"><span class="q">Q${i + 1}. ${q.text}</span>
     <span class="tag ${results[i] ? "ok" : ""}">${results[i] ? "せいかい" : "ざんねん"}</span></div>`).join("");
@@ -371,7 +343,7 @@ function confetti(){
 }
 
 function send(pt, n){
-  const body = { nickname: nick, score: `${pt}/${n}`, time_ms: elapsed };
+  const body = { nickname: nick, score: `${pt}/${n}` };
   QUESTIONS.forEach((q, i) => { body["q" + (i + 1)] = ordered(q, picks[i]).join("、"); });
   fetch(SUBMIT_URL, {
     method: "POST",
@@ -379,32 +351,8 @@ function send(pt, n){
     body: JSON.stringify(body)
   })
     .then(r => r.json())
-    .then(d => {
-      if (!d.ok) return;
-      $("sent").textContent = "結果をゆづきに送信しました";
-      if (Array.isArray(d.top)) showRanking(d.top, d.rank, d.total, pt, n);
-    })
+    .then(d => { if (d.ok) $("sent").textContent = "結果をゆづきに送信しました"; })
     .catch(() => {});
-}
-
-/* ===== ランキング（上位3人） ===== */
-const sec = ms => (ms / 1000).toFixed(1) + "s";
-const esc = t => String(t).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-
-function showRanking(top, rank, total, pt, n){
-  $("rankList").innerHTML = top.length ? top.map((r, i) => `
-    <div class="rk r${i + 1}${rank === i + 1 ? " me" : ""}">
-      <span class="no">${i + 1}</span>
-      <span class="nm">${esc(r.nickname)}</span>
-      <span class="pt">${esc(r.score)}</span>
-      <span class="tm">${r.time_ms != null ? sec(r.time_ms) : "--"}</span>
-    </div>`).join("") : `<p class="rk-empty">まだだれもいない</p>`;
-  if (rank && total) {
-    $("myRank").innerHTML = rank <= 3
-      ? `${total}人中 <b>${rank}</b>位 ランクイン`
-      : `あなたは ${total}人中 <b>${rank}</b>位`;
-  }
-  $("rank").hidden = false;
 }
 </script>
 </body>
