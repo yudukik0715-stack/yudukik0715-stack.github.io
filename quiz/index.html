@@ -26,6 +26,20 @@
 
   /* スタート */
   .grade{text-align:center;font-size:15px;font-weight:700;letter-spacing:.25em}
+  /* 級の切りかえ三角 */
+  .trow{position:relative}
+  .lvnav{position:absolute;top:50%;z-index:2;width:44px;height:72px;margin-top:-36px;border:none;background:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;padding:0}
+  .lvnav[hidden]{display:none}
+  .lvnav i{display:block;width:0;height:0;border-top:17px solid transparent;border-bottom:17px solid transparent}
+  .lvnav.next{right:0;margin-top:-50px}
+  .lvnav.next i{border-left:24px solid var(--ink);border-radius:3px;animation:nudgeR 1.4s ease-in-out infinite}
+  .lvnav.prev{left:0;margin-top:-50px}
+  .lvnav.prev i{border-right:24px solid var(--ink);border-radius:3px;animation:nudgeL 1.4s ease-in-out infinite}
+  .lvnav:active i{transform:scale(.85)}
+  @keyframes nudgeR{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
+  @keyframes nudgeL{0%,100%{transform:translateX(0)}50%{transform:translateX(-4px)}}
+  #s-start.swap{animation:fade .35s ease}
   .big{text-align:center;font-family:"Outfit",sans-serif;font-weight:800;font-size:96px;line-height:1;letter-spacing:-.02em;margin:6px 0 34px}
   .pets{display:flex;justify-content:center;align-items:flex-end;gap:14px;margin:0 0 26px}
   .pets svg{width:64px;height:64px;display:block;image-rendering:pixelated}
@@ -112,6 +126,28 @@
   .boo{display:inline-block;font-family:"Outfit",sans-serif;font-weight:800;font-size:13px;letter-spacing:.15em;
     border:3px solid var(--ink);border-radius:999px;padding:1px 12px;transform:rotate(-6deg);margin-bottom:10px}
   .bit{position:fixed;top:-14px;z-index:60;pointer-events:none;background:var(--ink)}
+
+  textarea.free{width:100%;min-height:140px;font-family:inherit;font-size:17px;line-height:1.6;padding:13px 16px;
+    border:4px solid var(--ink);border-radius:14px;background:#fff;color:var(--ink);outline:none;resize:none}
+  textarea.free::placeholder{color:#c4c4c4}
+  .count{text-align:right;font-family:"Outfit",sans-serif;font-size:12px;color:var(--gray);margin-top:6px}
+
+  /* ランキング */
+  .time{text-align:center;font-family:"Outfit",sans-serif;font-weight:600;font-size:15px;color:var(--gray);margin:-14px 0 20px}
+  .rank{margin:26px 0 4px;border:4px solid var(--ink);border-radius:16px;padding:16px 16px 12px}
+  .rank h2{font-family:"Outfit",sans-serif;font-weight:800;font-size:15px;letter-spacing:.25em;text-align:center;margin-bottom:10px}
+  .rk{display:flex;align-items:center;gap:12px;padding:9px 2px;border-top:3px solid var(--light)}
+  .rk:first-of-type{border-top:none}
+  .rk .no{flex:none;width:34px;height:34px;border:3px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-family:"Outfit",sans-serif;font-weight:800;font-size:16px}
+  .rk.r1 .no{background:var(--ink);color:#fff}
+  .rk .nm{flex:1;min-width:0;font-size:16px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rk .pt{font-family:"Outfit",sans-serif;font-weight:800;font-size:16px;white-space:nowrap}
+  .rk .tm{font-family:"Outfit",sans-serif;font-weight:600;font-size:12px;color:var(--gray);width:46px;text-align:right;white-space:nowrap}
+  .rk.me .nm::after{content:"YOU";margin-left:6px;font-family:"Outfit",sans-serif;font-size:10px;letter-spacing:.1em;border:2px solid var(--ink);border-radius:999px;padding:0 6px;vertical-align:2px}
+  .myrank{text-align:center;font-size:14px;font-weight:700;margin-top:10px}
+  .myrank b{font-family:"Outfit",sans-serif;font-weight:800;font-size:22px;margin:0 2px}
+  .rk-empty{text-align:center;font-size:13px;color:var(--gray);padding:6px 0}
 </style>
 </head>
 <body>
@@ -119,8 +155,12 @@
 
   <!-- スタート -->
   <section class="screen on" id="s-start">
-    <p class="grade">ゆづき検定 3級</p>
-    <h1 class="big" id="secret">Quiz</h1>
+    <p class="grade" id="grade">ゆづき検定 3級</p>
+    <div class="trow">
+      <button class="lvnav prev" id="toLv3" aria-label="3級へ" hidden><i></i></button>
+      <h1 class="big" id="secret">Quiz</h1>
+      <button class="lvnav next" id="toLv2" aria-label="2級へ"><i></i></button>
+    </div>
     <label class="lb" for="nick">ニックネーム</label>
     <input type="text" id="nick" maxlength="20" placeholder="ここに入力" autocomplete="off">
     <button class="btn" id="startBtn" disabled>はじめる</button>
@@ -156,7 +196,13 @@
     <p class="rlabel" id="resName"></p>
     <div class="score" id="score"></div>
     <p class="title" id="title"></p>
+    <p class="time" id="time"></p>
     <div id="review"></div>
+    <div class="rank" id="rank" hidden>
+      <h2>RANKING</h2>
+      <div id="rankList"><p class="rk-empty">集計中...</p></div>
+      <p class="myrank" id="myRank"></p>
+    </div>
     <p class="sent" id="sent"></p>
     <button class="btn ghost" id="againBtn">もういちど</button>
   </section>
@@ -167,17 +213,36 @@
 
 <script>
 /* ===== 問題 ===== */
-const QUESTIONS = [
-  { text: "好きなサンリオキャラクターは？",
-    options: ["キティ", "マイメロ", "シナモン", "クロミ"],
-    answer: ["シナモン"], multi: false },
-  { text: "家族構成は？",
-    options: ["ぱぱ", "まま", "妹", "兄", "弟", "犬", "猫", "うさぎ"],
-    answer: ["ぱぱ", "まま", "妹", "犬", "うさぎ"], multi: true },
-  { text: "ペットの名前は？",
-    options: ["モカ・カプチーノ", "ととまる・みる", "るんた・ずやた", "うる・かのん"],
-    answer: ["ととまる・みる"], multi: false }
-];
+const LEVELS = {
+  3: { name: "3級", version: 2, questions: [
+    { text: "好きなサンリオキャラクターは？",
+      options: ["キティ", "マイメロ", "シナモン", "クロミ"],
+      answer: ["シナモン"], multi: false },
+    { text: "家族構成は？",
+      options: ["ぱぱ", "まま", "妹", "兄", "弟", "犬", "猫", "うさぎ"],
+      answer: ["ぱぱ", "まま", "妹", "犬", "うさぎ"], multi: true },
+    { text: "ペットの名前は？",
+      options: ["モカ・カプチーノ", "ととまる・みる", "るんた・ずやた", "うる・かのん"],
+      answer: ["ととまる・みる"], multi: false },
+    { text: "好きな科目は？",
+      options: ["国語", "英語", "物理", "数学"],
+      answer: ["数学"], multi: false }
+  ]},
+  2: { name: "2級", version: 3, questions: [
+    { text: "した事ある髪色は？",
+      options: ["グレージュ", "金髪", "ベージュ", "インナーカラー", "茶髪", "ピンクカラー"],
+      answer: ["金髪", "茶髪", "グレージュ"], multi: true },
+    { text: "好きなカフェは？",
+      options: ["タリーズ", "ドトール", "コメダ", "サンマルク"],
+      answer: ["タリーズ"], multi: false },
+    { text: "好きなゲームは？",
+      options: ["マイクラ", "あつ森", "Sky", "APEX", "ポケモン", "スプラトゥーン"],
+      answer: ["あつ森", "Sky", "スプラトゥーン"], multi: true },
+    { text: "子供の頃のあだ名は？", type: "write",
+      placeholder: "ここに書いてね", answer: ["ゆったん"] }
+  ]}
+};
+let LV = 3, QUESTIONS = LEVELS[3].questions;
 
 /* ===== 結果の送信先（Lovableの結果ノート） ===== */
 const SUBMIT_URL = "https://yuzuki-quiz-note.lovable.app/api/public/submit-result";
@@ -213,8 +278,21 @@ document.getElementById("secret").onclick = () => {
 
 /* ===== 動き ===== */
 const $ = id => document.getElementById(id);
-let cur = 0, nick = "", picks = [];
+let cur = 0, nick = "", picks = [], t0 = 0, elapsed = 0;
 
+function setLevel(lv){
+  LV = lv; QUESTIONS = LEVELS[lv].questions;
+  $("grade").textContent = `ゆづき検定 ${LEVELS[lv].name}`;
+  document.title = `ゆづき検定 ${LEVELS[lv].name}`;
+  $("toLv2").hidden = lv !== 3;
+  $("toLv3").hidden = lv !== 2;
+  const st = $("s-start");
+  st.classList.remove("swap"); void st.offsetWidth; st.classList.add("swap");
+  history.replaceState(null, "", lv === 2 ? "#2" : location.pathname);
+  if (navigator.vibrate) navigator.vibrate(8);
+}
+$("toLv2").onclick = () => setLevel(2);
+$("toLv3").onclick = () => setLevel(3);
 $("nick").addEventListener("input", e => { $("startBtn").disabled = !e.target.value.trim(); });
 $("startBtn").onclick = () => { nick = $("nick").value.trim(); begin(); };
 $("nextBtn").onclick = () => { cur++; cur < QUESTIONS.length ? render() : judge(); };
@@ -222,32 +300,54 @@ $("againBtn").onclick = () => begin();
 
 function show(id){
   document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id));
+  $("toLv2").hidden = !(id === "s-start" && LV === 3);
+  $("toLv3").hidden = !(id === "s-start" && LV === 2);
   window.scrollTo(0, 0);
 }
 
 function begin(){
-  cur = 0; picks = [];
+  cur = 0; picks = []; elapsed = 0;
   show("s-load");
   const b = $("loadBar");
   b.style.transition = "none"; b.style.width = "0";
   requestAnimationFrame(() => requestAnimationFrame(() => {
     b.style.transition = "width 1.3s steps(9)"; b.style.width = "100%";
   }));
-  setTimeout(render, 1600);
+  setTimeout(() => { t0 = performance.now(); render(); }, 1600);
 }
 
 function render(){
   const q = QUESTIONS[cur];
   picks[cur] = [];
-  $("qn").textContent = `Q${cur + 1}`;
+  $("qn").textContent = q.type === "text" ? "EX" : `Q${cur + 1}`;
   $("qbar").style.width = (cur / QUESTIONS.length * 100) + "%";
   $("qt").textContent = q.text;
   $("hint").textContent = q.multi ? "あてはまるもの、ぜんぶえらんでね" : "ひとつえらんでね";
   $("nextBtn").textContent = cur === QUESTIONS.length - 1 ? "採点する" : "つぎへ";
   $("nextBtn").disabled = true;
   const box = $("opts");
-  box.className = "opts" + (q.options.length > 4 ? " two" : "");
   box.innerHTML = "";
+  if (q.type === "write") {
+    $("hint").textContent = "ひらがなでもカタカナでもOK";
+    box.className = "opts";
+    box.innerHTML = `<input type="text" id="wr" maxlength="20" autocomplete="off" placeholder="${q.placeholder}">`;
+    $("wr").oninput = e => { picks[cur] = e.target.value.trim() ? [e.target.value] : []; $("nextBtn").disabled = !picks[cur].length; };
+    show("s-q");
+    requestAnimationFrame(() => { $("qbar").style.width = ((cur + 1) / QUESTIONS.length * 100) + "%"; });
+    return;
+  }
+  if (q.type === "text") {
+    if (!elapsed) elapsed = Math.round(performance.now() - t0);  // 書く時間はタイムに入れない
+    $("hint").textContent = "点数には入らないよ、ゆづきだけが読めます";
+    $("nextBtn").disabled = false;
+    box.className = "opts";
+    box.innerHTML = `<textarea class="free" id="free" maxlength="100" placeholder="${q.placeholder}"></textarea><p class="count" id="cnt">0/100</p>`;
+    $("free").oninput = e => { picks[cur] = [e.target.value]; $("cnt").textContent = `${[...e.target.value].length}/100`; };
+    show("s-q");
+    requestAnimationFrame(() => { $("qbar").style.width = "100%"; });
+    return;
+  }
+  box.className = "opts" + (q.options.length > 4 ? " two" : "");
   q.options.forEach(o => {
     const b = document.createElement("button");
     b.className = "opt"; b.textContent = o;
@@ -270,25 +370,39 @@ function render(){
 }
 
 const same = (a, b) => a.length === b.length && a.every(x => b.includes(x));
+/* 記述の答えをそろえる：全角半角・カタカナ→ひらがな・空白・「ちゃん/さん/くん」を無視 */
+const norm = t => (t || "").normalize("NFKC").toLowerCase()
+  .replace(/[\u30a1-\u30f6]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60))
+  .replace(/[\s　・.。、,!！?？~〜ー-]/g, m => m === "ー" ? "ー" : "")
+  .replace(/(ちゃん|さん|くん|たそ)$/, "");
+const correct = (q, p) => q.type === "write"
+  ? q.answer.some(a => norm(a) === norm(p[0]))
+  : same(p, q.answer);
 const ordered = (q, arr) => q.options.filter(o => arr.includes(o));
 
 function judge(){
+  if (!elapsed) elapsed = Math.round(performance.now() - t0);
   show("s-judge");
   setTimeout(finish, 1800);
 }
 
 function finish(){
-  const results = QUESTIONS.map((q, i) => same(picks[i], q.answer));
-  const pt = results.filter(Boolean).length, n = QUESTIONS.length;
+  const scored = QUESTIONS.map((q, i) => [q, i]).filter(([q]) => q.type !== "text");
+  const results = scored.map(([q, i]) => correct(q, picks[i]));
+  const pt = results.filter(Boolean).length, n = scored.length;
   const msg = pt === n ? "貴方はゆづきマスターです"
             : pt === n - 1 ? "惜しい、本人に聞こう"
             : "もっと話しかけろ";
   $("resName").textContent = `${nick} さんの結果`;
   $("score").innerHTML = `${pt}<small>/${n}</small>`;
   $("title").textContent = msg;
-  $("review").innerHTML = QUESTIONS.map((q, i) => `
+  $("time").textContent = `TIME ${sec(elapsed)}`;
+  $("rank").hidden = true;
+  $("rankList").innerHTML = `<p class="rk-empty">集計中...</p>`;
+  $("myRank").textContent = "";
+  $("review").innerHTML = scored.map(([q, i], k) => `
     <div class="rv"><span class="q">Q${i + 1}. ${q.text}</span>
-    <span class="tag ${results[i] ? "ok" : ""}">${results[i] ? "せいかい" : "ざんねん"}</span></div>`).join("");
+    <span class="tag ${results[k] ? "ok" : ""}">${results[k] ? "せいかい" : "ざんねん"}</span></div>`).join("");
   show("s-res");
   setTimeout(() => popup(pt, n, msg), 300);
   send(pt, n);
@@ -301,7 +415,7 @@ function popup(pt, n, msg){
     dlg.innerHTML = `
       <p class="kicker">CERTIFIED</p>
       <p class="m1">貴方は<br>ゆづきマスターです</p>
-      <p style="font-size:13px;color:var(--gray)">ゆづき検定 3級 合格</p>
+      <p style="font-size:13px;color:var(--gray)">ゆづき検定 ${LEVELS[LV].name} 合格</p>
       <button class="btn" id="okBtn">OK</button>`;
     setTimeout(confetti, 250);
     if (navigator.vibrate) navigator.vibrate([30, 60, 30]);
@@ -343,16 +457,44 @@ function confetti(){
 }
 
 function send(pt, n){
-  const body = { nickname: nick, score: `${pt}/${n}` };
-  QUESTIONS.forEach((q, i) => { body["q" + (i + 1)] = ordered(q, picks[i]).join("、"); });
+  const body = { nickname: nick, score: `${pt}/${n}`, time_ms: elapsed, version: LEVELS[LV].version };
+  QUESTIONS.forEach((q, i) => {
+    body["q" + (i + 1)] = (q.type === "text" || q.type === "write") ? (picks[i][0] || "").trim().slice(0, 100) : ordered(q, picks[i]).join("、");
+  });
   fetch(SUBMIT_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
   })
     .then(r => r.json())
-    .then(d => { if (d.ok) $("sent").textContent = "結果をゆづきに送信しました"; })
+    .then(d => {
+      if (!d.ok) return;
+      $("sent").textContent = "結果をゆづきに送信しました";
+      if (Array.isArray(d.top)) showRanking(d.top, d.rank, d.total, pt, n);
+    })
     .catch(() => {});
+}
+
+if (location.hash === "#2") setLevel(2);
+
+/* ===== ランキング（上位3人） ===== */
+const sec = ms => (ms / 1000).toFixed(1) + "s";
+const esc = t => String(t).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function showRanking(top, rank, total, pt, n){
+  $("rankList").innerHTML = top.length ? top.map((r, i) => `
+    <div class="rk r${i + 1}${rank === i + 1 ? " me" : ""}">
+      <span class="no">${i + 1}</span>
+      <span class="nm">${esc(r.nickname)}</span>
+      <span class="pt">${esc(r.score)}</span>
+      <span class="tm">${r.time_ms != null ? sec(r.time_ms) : "--"}</span>
+    </div>`).join("") : `<p class="rk-empty">まだだれもいない</p>`;
+  if (rank && total) {
+    $("myRank").innerHTML = rank <= 3
+      ? `${total}人中 <b>${rank}</b>位 ランクイン`
+      : `あなたは ${total}人中 <b>${rank}</b>位`;
+  }
+  $("rank").hidden = false;
 }
 </script>
 </body>
