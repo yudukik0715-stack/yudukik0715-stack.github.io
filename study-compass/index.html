@@ -107,7 +107,6 @@ main { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 24px; 
 .pdf-list { margin: 12px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
 .pdf-list li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
 .pdf-list li span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.pdf-list .del { flex: none; color: var(--muted-foreground); font-size: 12px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 999px; }
 .src-hint { margin: 8px 0 0; font-size: 11px; color: var(--muted-foreground); }
 .pick { list-style: none; margin: 0; padding: 0; font-size: 13px; }
 .pick li + li { border-top: 1px solid var(--border); }
@@ -1321,34 +1320,22 @@ async function openPdf(name, page) {
 }
 loadPdfNames();
 
-// List of imported PDFs: add more, delete one, or delete all. Only the PDFs in this browser are
-// touched; problem records in localStorage are never changed here.
+// List of imported PDFs and a button to import more. No delete here on purpose: the user asked
+// to remove it so a mistaken tap can't wipe the PDFs.
 const dlgPdfList = document.getElementById("dlg-pdf");
 function openPdfList() {
   const names = [...pdfNames].sort((a, b) => a.localeCompare(b, "ja"));
   dlgPdfList.innerHTML = `<button type="button" class="dlg-x" data-d="cancel" aria-label="閉じる">${I.x}</button>
     <h2 class="dlg-title">取り込んだPDF（${names.length}件）</h2>
-    <p class="dlg-desc">PDFはこの端末の中だけに保存されます。消しても問題の記録は消えません。まとめて入れるときは、ファイルを選ぶ画面で「選択」を押して複数選んでね。</p>
-    <div class="sim-actions">${names.length ? `<button class="btn ghost" data-d="clear">全部消す</button>` : ""}<button class="btn pri" data-d="add">PDFを取り込む</button></div>
-    ${names.length ? `<ul class="pdf-list">${names.map((n) => `<li><span>${esc(n)}</span><button class="del" data-del="${esc(n)}">消す</button></li>`).join("")}</ul>` : `<p class="dlg-desc" style="margin-top:12px">まだ何も入っていません。</p>`}`;
+    <p class="dlg-desc">PDFはこの端末の中だけに保存されます。まとめて入れるときは、ファイルを選ぶ画面で「選択」を押して複数選んでね。同じ名前のPDFは新しい方で上書きされます。</p>
+    <div class="sim-actions"><button class="btn pri" data-d="add">PDFを取り込む</button></div>
+    ${names.length ? `<ul class="pdf-list">${names.map((n) => `<li><span>${esc(n)}</span></li>`).join("")}</ul>` : `<p class="dlg-desc" style="margin-top:12px">まだ何も入っていません。</p>`}`;
   if (!dlgPdfList.open) dlgPdfList.showModal();
 }
-dlgPdfList.addEventListener("click", async (e) => {
-  const t = e.target.closest("[data-d],[data-del]");
-  if (!t) return;
-  if (t.dataset.del) {
-    const name = t.dataset.del;
-    try { await pdfTx("readwrite", (st) => st.delete(name)); pdfNames.delete(name); toast(`${name} を消しました`); }
-    catch (err) { toast("消せませんでした", "err"); }
-    openPdfList(); render();
-  } else if (t.dataset.d === "cancel") dlgPdfList.close();
-  else if (t.dataset.d === "add") { dlgPdfList.close(); impPdf.click(); }
-  else if (t.dataset.d === "clear") {
-    if (!(await askConfirm(`取り込んだPDFを${pdfNames.size}件ぜんぶ消しますか？\n問題の記録はそのまま残ります。`, "全部消す"))) return;
-    try { await pdfTx("readwrite", (st) => st.clear()); pdfNames = new Set(); toast("PDFを全部消しました"); }
-    catch (err) { toast("消せませんでした", "err"); }
-    openPdfList(); render();
-  }
+dlgPdfList.addEventListener("click", (e) => {
+  const d = e.target.closest("[data-d]")?.dataset.d;
+  if (d === "cancel") dlgPdfList.close();
+  else if (d === "add") { dlgPdfList.close(); impPdf.click(); }
 });
 closeOnBackdrop(dlgPdfList);
 
