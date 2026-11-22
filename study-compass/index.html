@@ -283,6 +283,7 @@ textarea.inp { height: auto; padding: 8px; resize: vertical; }
 <dialog id="dlg-problem"></dialog>
 <dialog id="dlg-similar" class="sm"></dialog>
 <dialog id="dlg-reflect" class="sm"></dialog>
+<dialog id="dlg-confirm" class="sm"></dialog>
 <input type="file" id="imp" accept="application/json,.json" hidden>
 <script>
 "use strict";
@@ -843,6 +844,22 @@ function render() {
   }
 }
 
+/* ---------- confirm (in-page; some in-app browsers silently block window.confirm) ---------- */
+function askConfirm(msg, ok = "入れる") {
+  const d = document.getElementById("dlg-confirm");
+  const [head, ...rest] = String(msg).split("\n");
+  d.innerHTML = `<h2 class="dlg-title">${esc(head)}</h2>
+    <p class="dlg-desc" style="white-space:pre-line">${esc(rest.join("\n"))}</p>
+    <div class="sim-actions"><button class="btn ghost" data-c="no">やめる</button><button class="btn pri" data-c="yes">${esc(ok)}</button></div>`;
+  return new Promise((res) => {
+    const done = (v) => { d.removeEventListener("click", on); d.removeEventListener("cancel", onCancel); if (d.open) d.close(); res(v); };
+    const on = (e) => { const c = e.target.closest("[data-c]")?.dataset.c; if (c) done(c === "yes"); };
+    const onCancel = () => done(false);
+    d.addEventListener("click", on); d.addEventListener("cancel", onCancel);
+    try { d.showModal(); } catch { done(window.confirm(String(msg))); }
+  });
+}
+
 /* ---------- toast ---------- */
 function toast(msg, kind = "ok") {
   const el = document.createElement("div");
@@ -1035,7 +1052,7 @@ imp.addEventListener("change", async () => {
     const o = parseJsonLoose(await file.text());
     if (o?.mode === "add") { addProblems(o.problems ?? [], o.updates ?? []); return; }
     if (!o || !Array.isArray(o.problems)) throw new Error("bad");
-    if (!confirm("今のデータを、このファイルの内容で置きかえますか？")) return;
+    if (!(await askConfirm("今のデータを、このファイルの内容で置きかえますか？", "置きかえる"))) return;
     delete o.view;
     S = { ...initial(), ...o, view: { kind: "detail" } };
     ui.groupKey = null;
@@ -1082,7 +1099,7 @@ const solvedTime = (d) => {
   if (!Number.isFinite(t) || dayStart(t) > dayStart(Date.now())) return null;
   return Math.min(t, Date.now());
 };
-function addProblems(list, updates = []) {
+async function addProblems(list, updates = []) {
   const key = (p) => [p.subject, p.year, p.school, p.part].map((x) => String(x ?? "").replace(/\s+/g, "")).join("|");
   const ids = new Set(S.problems.map((p) => p.id));
   const keys = new Set(S.problems.map(key));
@@ -1126,7 +1143,7 @@ function addProblems(list, updates = []) {
   if (unitN) lines.push(`・${unitN}問の単元を直す`);
   const noteN = [...patches.values()].filter((x) => x.note).length;
   if (noteN) lines.push(`・${noteN}問の結果メモに追記`);
-  if (!confirm(`次の内容を入れますか？\n${lines.join("\n")}\n今の記録はそのまま残ります。`)) return;
+  if (!(await askConfirm(`次の内容を入れますか？\n${lines.join("\n")}\n今の記録はそのまま残ります。`))) return;
   S.problems = [...S.problems.map((p) => (patches.has(p.id) ? { ...p, ...patches.get(p.id), updatedAt: Date.now() } : p)), ...fresh];
   S.log = [logEntry(lines.map((x) => x.slice(1)).join("・")), ...S.log].slice(0, 50);
   ui.groupKey = null;
