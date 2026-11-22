@@ -119,6 +119,15 @@ main { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 24px; 
 .pk-st.ok { color: #16a34a; font-weight: 600; }
 .drill { display: inline-block; vertical-align: middle; margin-left: 8px; border-radius: 999px; padding: 1px 10px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); color: var(--muted-foreground); }
 .drill.ondoku { border-color: var(--primary); color: var(--primary-strong); }
+.mode-seg { margin-top: 8px; }
+.set-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 0; }
+.set-row .set-t { flex: 1 1 220px; display: flex; gap: 10px; align-items: flex-start; text-align: left; padding: 4px 0; min-width: 0; }
+.set-row .num { flex: none; width: 22px; height: 22px; border-radius: 999px; border: 1px solid var(--border); display: grid; place-items: center; font-size: 11px; }
+.res-btns { display: flex; gap: 6px; margin-left: auto; }
+.res-btns button { border: 1px solid var(--border); border-radius: 999px; padding: 0 12px; height: 30px; line-height: 1; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; min-width: 44px; flex: none; width: auto; }
+.res-btns button.on.r-o { background: #16a34a; border-color: #16a34a; color: #fff; }
+.res-btns button.on.r-h { background: #d97706; border-color: #d97706; color: #fff; }
+.res-btns button.on.r-x { background: #dc2626; border-color: #dc2626; color: #fff; }
 .pk-h { margin: 16px 0 4px; font-size: 12px; font-weight: 600; color: var(--muted-foreground); }
 .seg { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
 .seg button { border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; font-size: 13px; }
@@ -1136,7 +1145,12 @@ imp.addEventListener("change", async () => {
   if (!file) return;
   try {
     const o = parseJsonLoose(await file.text());
-    if (o?.mode === "add") { applyPdfMap(o.pdfMap); addProblems(o.problems ?? [], o.updates ?? []); return; }
+    if (o?.mode === "add") {
+      applyPdfMap(o.pdfMap); const ns = mergeSets(o.sets);
+      if (o.problems?.length || o.updates?.length) addProblems(o.problems ?? [], o.updates ?? []);
+      else if (ns) toast(`複合プリントを${ns}セット入れました`);
+      return;
+    }
     if (!o || !Array.isArray(o.problems)) throw new Error("bad");
     if (!(await askConfirm("今のデータを、このファイルの内容で置きかえますか？", "置きかえる"))) return;
     delete o.view;
@@ -1185,8 +1199,10 @@ async function addFromLink() {
       text = await r.text();
     }
     const o = parseJsonLoose(text);
-    if (!o || !(Array.isArray(o.problems) || Array.isArray(o.updates) || o.pdfMap)) throw new Error("bad");
+    if (!o || !(Array.isArray(o.problems) || Array.isArray(o.updates) || o.pdfMap || Array.isArray(o.sets))) throw new Error("bad");
     applyPdfMap(o.pdfMap);
+    const ns = mergeSets(o.sets);
+    if (ns && !o.problems?.length && !o.updates?.length) toast(`複合プリントを${ns}セット入れました`);
     if (o.problems?.length || o.updates?.length) addProblems(o.problems ?? [], o.updates ?? []);
   } catch (e) {
     toast("過去問のデータを読み込めませんでした", "err");
@@ -1559,12 +1575,88 @@ function randomPicks(subj, n, withSolved) {
   }
   return shuffle(out);
 }
+// 複合プリント: ready-made sets of a few problems from different units (one PDF each), solved in
+// one sitting and recorded together. Sets arrive with the data link and are kept in S.sets.
+function mergeSets(list) {
+  if (!Array.isArray(list)) return 0;
+  const ok = list.filter((x) => x && x.id && Array.isArray(x.ids) && SUBJECT_JA[x.subject]).map((x) => ({
+    id: String(x.id), name: String(x.name ?? x.id), subject: x.subject, minutes: Number(x.minutes) || 0,
+    print: String(x.print ?? ""), answer: String(x.answer ?? ""), ids: x.ids.map(String) }));
+  if (!ok.length) return 0;
+  const m = new Map((S.sets ?? []).map((x) => [x.id, x]));
+  for (const x of ok) m.set(x.id, x);
+  S.sets = [...m.values()];
+  save();
+  return ok.length;
+}
+const RES = [["o", "○"], ["h", "ヒント"], ["x", "×"]];
+const RES_TXT = { o: "○", h: "ヒントあり", x: "×" };
+function setsHtml(o) {
+  const sets = (S.sets ?? []).filter((x) => x.subject === o.fsubj && x.minutes === o.fmin);
+  const all = S.sets ?? [];
+  if (!all.length) return `<p class="dlg-desc" style="margin-top:12px">複合プリントがまだ入っていません。Claude から届くリンクで入ります。</p>`;
+  return `<div class="m12">科目</div>
+    <div class="seg">${[["math", "数学"], ["physics", "物理"]].map(([v, l]) => `<button data-fsubj="${v}" class="${o.fsubj === v ? "on" : ""}">${l}</button>`).join("")}</div>
+    <div class="m12">コース</div>
+    <div class="seg">${[20, 40, 60].map((v) => `<button data-fmin="${v}" class="${o.fmin === v ? "on" : ""}">${v}分</button>`).join("")}</div>
+    <ul class="pick">${sets.map((x) => {
+      const done = S.setLog?.[x.id];
+      return `<li><button data-set="${esc(x.id)}"><span class="due-sub">${x.minutes}分</span><span class="pk-main"><div class="pk-t">${esc(x.name)}</div>
+        <div class="pk-s">${x.ids.length}問・${esc(x.print)}</div></span><span class="pk-st ${done ? "ok" : ""}">${done ? `${mdTxt(done)} 済` : ""}</span></button></li>`;
+    }).join("") || `<li class="pk-s" style="padding:10px 0">このコースのセットはまだありません</li>`}</ul>`;
+}
+function setDetailHtml(set) {
+  const res = ui.setRes ?? {};
+  const rows = set.ids.map((id, i) => {
+    const p = S.problems.find((x) => x.id === id);
+    if (!p) return "";
+    return `<li class="set-row"><button class="set-t" data-pick="${esc(id)}"><span class="num">${i + 1}</span><span class="pk-main"><div class="pk-t">${esc(problemTitle(p))}</div>
+      <div class="pk-s">${esc(UNITS.find((x) => x.id === p.unitId)?.name ?? "")}・${esc(p.label)}${p.step1 ? "・解けた" : ""}</div></span></button>
+      <div class="res-btns">${RES.map(([k, l]) => `<button data-res="${esc(id)}:${k}" class="${res[id] === k ? `on r-${k}` : ""}">${l}</button>`).join("")}</div></li>`;
+  }).join("");
+  const n = Object.keys(res).length;
+  return `<button class="small-pill" data-d="sets-back" style="margin-top:0">← セット一覧</button>
+    <h2 class="dlg-title" style="margin-top:10px">${esc(set.name)}</h2>
+    <p class="dlg-desc">プリントを${set.minutes}分で一気に解いて、終わったら1問ずつ ○／ヒント／× を付けて「まとめて記録」。</p>
+    <dl class="src" style="margin:8px 0">${set.print ? `<dt>問題</dt><dd>${pdfLinks(set.print)}</dd>` : ""}${set.answer ? `<dt>解答</dt><dd>${pdfLinks(set.answer)}</dd>` : ""}</dl>
+    <ul class="pick set-list">${rows}</ul>
+    <div class="sim-actions"><button class="btn pri" data-d="rec" ${n ? "" : "disabled"}>まとめて記録（${n}/${set.ids.length}問）</button></div>`;
+}
+function recordSet(set) {
+  const res = ui.setRes ?? {};
+  const now = Date.now(), d = mdTxt(now);
+  let ok = 0;
+  S.problems = S.problems.map((p) => {
+    const r = res[p.id];
+    if (!r) return p;
+    const line = `${d} 複合 ${set.name}：${RES_TXT[r]}`;
+    const q = { ...p, note: p.note ? `${p.note}\n${line}` : line, updatedAt: now };
+    if (r === "o" && !p.step1) { q.step1 = true; q.step1At = now; q.reviewStage = 0; ok++; }
+    return q;
+  });
+  S.setLog = { ...(S.setLog ?? {}), [set.id]: now };
+  S.log = [logEntry(`複合 ${set.name} — ${Object.keys(res).length}問を記録`), ...S.log].slice(0, 50);
+  ui.setRes = {};
+  commit();
+  toast(ok ? `記録しました（新しく解けた ${ok}問）` : "記録しました");
+}
 const dlgX = document.getElementById("dlg-random");
+const rndOpts = () => ({ subj: "mp", n: 10, solved: false, mode: "shuffle", fsubj: "math", fmin: 40, ...S.randomOpts });
 function openRandom() {
-  const o = { subj: "mp", n: 10, solved: false, ...S.randomOpts };
+  const o = rndOpts();
   const set = S.randomSet;
-  dlgX.innerHTML = `<button type="button" class="dlg-x" data-d="cancel" aria-label="閉じる">${I.x}</button>
-    <h2 class="dlg-title">ランダム演習</h2>
+  const openSet = ui.setOpen && (S.sets ?? []).find((x) => x.id === ui.setOpen);
+  const head = `<button type="button" class="dlg-x" data-d="cancel" aria-label="閉じる">${I.x}</button>`;
+  if (openSet) { dlgX.innerHTML = head + setDetailHtml(openSet); if (!dlgX.open) dlgX.showModal(); return; }
+  const tabs = `<div class="seg mode-seg">${[["shuffle", "シャッフル"], ["sets", "複合プリント（まとめて解く）"]].map(([v, l]) => `<button data-mode="${v}" class="${o.mode === v ? "on" : ""}">${l}</button>`).join("")}</div>`;
+  if (o.mode === "sets") {
+    dlgX.innerHTML = `${head}<h2 class="dlg-title">ランダム演習</h2>${tabs}
+      <p class="dlg-desc">単元バラバラの数問を1枚のプリントで。時間を決めて一気に解いて、最後にまとめて記録。</p>${setsHtml(o)}`;
+    if (!dlgX.open) dlgX.showModal();
+    return;
+  }
+  dlgX.innerHTML = `${head}
+    <h2 class="dlg-title">ランダム演習</h2>${tabs}
     <p class="dlg-desc">単元をまたいでシャッフル。どの道具を使うかを自分で見抜く練習。</p>
     <div class="m12">科目</div>
     <div class="seg">${RND_SUBJ.map(([v, l]) => `<button data-subj="${v}" class="${o.subj === v ? "on" : ""}">${l}</button>`).join("")}</div>
@@ -1576,11 +1668,29 @@ function openRandom() {
   if (!dlgX.open) dlgX.showModal();
 }
 dlgX.addEventListener("click", (e) => {
+  const pdf = e.target.closest("[data-act=pdf]");
+  if (pdf) { openPdf(pdf.dataset.file, pdf.dataset.page); return; }
   const pick = e.target.closest("[data-pick]")?.dataset.pick;
   if (pick) { dlgX.close(); selectProblem(pick); return; }
-  const o = { subj: "mp", n: 10, solved: false, ...S.randomOpts };
-  const t = e.target.closest("[data-subj],[data-n],[data-solved],[data-d]");
+  const o = rndOpts();
+  const t = e.target.closest("[data-subj],[data-n],[data-solved],[data-d],[data-mode],[data-fsubj],[data-fmin],[data-set],[data-res]");
   if (!t) return;
+  if (t.dataset.mode) { S.randomOpts = { ...o, mode: t.dataset.mode }; save(); openRandom(); return; }
+  if (t.dataset.fsubj) { S.randomOpts = { ...o, fsubj: t.dataset.fsubj }; save(); openRandom(); return; }
+  if (t.dataset.fmin) { S.randomOpts = { ...o, fmin: Number(t.dataset.fmin) }; save(); openRandom(); return; }
+  if (t.dataset.set) { ui.setOpen = t.dataset.set; ui.setRes = {}; openRandom(); return; }
+  if (t.dataset.res) {
+    const [id, k] = t.dataset.res.split(":");
+    ui.setRes = { ...(ui.setRes ?? {}) };
+    if (ui.setRes[id] === k) delete ui.setRes[id]; else ui.setRes[id] = k;
+    openRandom(); return;
+  }
+  if (t.dataset.d === "sets-back") { ui.setOpen = null; ui.setRes = {}; openRandom(); return; }
+  if (t.dataset.d === "rec") {
+    const set = (S.sets ?? []).find((x) => x.id === ui.setOpen);
+    if (set) { recordSet(set); openRandom(); }
+    return;
+  }
   if (t.dataset.subj) { S.randomOpts = { ...o, subj: t.dataset.subj }; save(); openRandom(); }
   else if (t.dataset.n) { S.randomOpts = { ...o, n: Number(t.dataset.n) }; save(); openRandom(); }
   else if (t.hasAttribute("data-solved")) { S.randomOpts = { ...o, solved: t.checked }; save(); }
