@@ -1033,8 +1033,8 @@ imp.addEventListener("change", async () => {
   if (!file) return;
   try {
     const o = parseJsonLoose(await file.text());
+    if (o?.mode === "add") { addProblems(o.problems ?? [], o.updates ?? []); return; }
     if (!o || !Array.isArray(o.problems)) throw new Error("bad");
-    if (o.mode === "add") { addProblems(o.problems); return; }
     if (!confirm("今のデータを、このファイルの内容で置きかえますか？")) return;
     delete o.view;
     S = { ...initial(), ...o, view: { kind: "detail" } };
@@ -1065,8 +1065,8 @@ async function addFromLink() {
     const r = await fetch(`data/${m[1]}.json`, { cache: "no-store" });
     if (!r.ok) throw new Error(String(r.status));
     const o = parseJsonLoose(await r.text());
-    if (!o || !Array.isArray(o.problems)) throw new Error("bad");
-    addProblems(o.problems);
+    if (!o || !(Array.isArray(o.problems) || Array.isArray(o.updates))) throw new Error("bad");
+    addProblems(o.problems ?? [], o.updates ?? []);
   } catch (e) {
     toast("過去問のデータを読み込めませんでした", "err");
   }
@@ -1074,33 +1074,58 @@ async function addFromLink() {
 setTimeout(addFromLink, 300);
 window.addEventListener("hashchange", addFromLink);
 
-// "add" files only append problems that are not in the stock yet; nothing already saved is changed.
-function addProblems(list) {
+// "add" files only append problems that are not in the stock yet, and "updates" only fill in
+// what is still empty (a solved date on an unsolved problem, or a unit the user has not changed).
+// Nothing already saved is removed or overwritten.
+const solvedTime = (d) => { const t = new Date(`${d}T12:00:00`).getTime(); return Number.isFinite(t) && t <= Date.now() ? t : null; };
+function addProblems(list, updates = []) {
   const key = (p) => [p.subject, p.year, p.school, p.part].map((x) => String(x ?? "").replace(/\s+/g, "")).join("|");
   const ids = new Set(S.problems.map((p) => p.id));
   const keys = new Set(S.problems.map(key));
   const fresh = list
     .filter((p) => p && SUBJECT_JA[p.subject] && UNITS.some((x) => x.id === p.unitId && x.subject === p.subject))
     .filter((p) => !ids.has(p.id) && !keys.has(key(p)))
-    .map((p) => ({
-      id: String(p.id || newId()), subject: p.subject, unitId: p.unitId,
-      year: Number(p.year) || 0, exam: EXAMS.includes(p.exam) ? p.exam : "二次",
-      school: String(p.school ?? ""), part: String(p.part ?? ""), label: String(p.label ?? ""),
-      difficulty: Math.min(5, Math.max(1, Number(p.difficulty) || 3)),
-      principles: Array.isArray(p.principles) ? p.principles.map(String) : [],
-      insight: String(p.insight ?? ""), note: String(p.note ?? ""), refs: [],
-      step1: false, step2: false, updatedAt: Date.now(),
-      ...(UNITS.find((x) => x.id === p.unitId)?.track === "listening" ? { listening: { causes: [], script: "", heard: "" } } : {}),
-    }));
-  const skipped = list.length - fresh.length;
-  if (fresh.length === 0) { toast(`追加する過去問はありませんでした（${skipped}問はもう入っています）`); return; }
-  if (!confirm(`${fresh.length}問を追加しますか？\n今の記録はそのまま残ります。${skipped ? `\n（${skipped}問はもう入っているので飛ばします）` : ""}`)) return;
-  S.problems = [...S.problems, ...fresh];
-  S.log = [logEntry(`過去問を${fresh.length}問まとめて追加`), ...S.log].slice(0, 50);
+    .map((p) => {
+      const at = p.solvedAt ? solvedTime(p.solvedAt) : null;
+      return {
+        id: String(p.id || newId()), subject: p.subject, unitId: p.unitId,
+        year: Number(p.year) || 0, exam: EXAMS.includes(p.exam) ? p.exam : "二次",
+        school: String(p.school ?? ""), part: String(p.part ?? ""), label: String(p.label ?? ""),
+        difficulty: Math.min(5, Math.max(1, Number(p.difficulty) || 3)),
+        principles: Array.isArray(p.principles) ? p.principles.map(String) : [],
+        insight: String(p.insight ?? ""), note: String(p.note ?? ""), refs: [],
+        step1: !!at, step2: false, updatedAt: Date.now(),
+        ...(at ? { step1At: at, reviewStage: 0 } : {}),
+        ...(UNITS.find((x) => x.id === p.unitId)?.track === "listening" ? { listening: { causes: [], script: "", heard: "" } } : {}),
+      };
+    });
+  const patches = new Map();
+  for (const u of updates) {
+    const p = S.problems.find((x) => x.id === u?.id);
+    if (!p) continue;
+    const patch = {};
+    if (u.unitId && u.fromUnitId === p.unitId && UNITS.some((x) => x.id === u.unitId && x.subject === p.subject)) {
+      patch.unitId = u.unitId;
+      if (u.label && u.fromLabel === p.label) patch.label = u.label;
+    }
+    const at = u.solvedAt ? solvedTime(u.solvedAt) : null;
+    if (at && !p.step1) Object.assign(patch, { step1: true, step1At: at, reviewStage: 0 });
+    if (Object.keys(patch).length) patches.set(p.id, patch);
+  }
+  const solvedN = fresh.filter((p) => p.step1).length + [...patches.values()].filter((x) => x.step1).length;
+  const unitN = [...patches.values()].filter((x) => x.unitId).length;
+  if (fresh.length === 0 && patches.size === 0) { toast("新しく入れるものはありませんでした（もう入っています）"); return; }
+  const lines = [];
+  if (fresh.length) lines.push(`・${fresh.length}問を追加`);
+  if (solvedN) lines.push(`・${solvedN}問を「自力で解けた」にする（解いた日つき）`);
+  if (unitN) lines.push(`・${unitN}問の単元を直す`);
+  if (!confirm(`次の内容を入れますか？\n${lines.join("\n")}\n今の記録はそのまま残ります。`)) return;
+  S.problems = [...S.problems.map((p) => (patches.has(p.id) ? { ...p, ...patches.get(p.id), updatedAt: Date.now() } : p)), ...fresh];
+  S.log = [logEntry(lines.map((x) => x.slice(1)).join("・")), ...S.log].slice(0, 50);
   ui.groupKey = null;
   resetFilters();
   commit();
-  toast(`${fresh.length}問を追加しました`);
+  toast("入れました");
 }
 
 /* ---------- events ---------- */
