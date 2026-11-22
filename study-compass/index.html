@@ -1,0 +1,1129 @@
+<!doctype html>
+<html lang="ja" data-theme="slate">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Study Compass — 目標から逆算する学習ダッシュボード</title>
+<meta name="description" content="過去問と解法の型を起点に、単元の穴をなくしながら目標へ進む個人用学習ダッシュボード。">
+<meta property="og:title" content="Study Compass — 目標から逆算する学習ダッシュボード">
+<meta property="og:description" content="過去問・抽象原理・参考書逆引き・2段階再現チェックで、参考書の完走ではなく目標達成へ。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+:root {
+  --radius: 1rem;
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #f7f8fa;
+  --popover: #ffffff;
+  --primary: #2563eb;
+  --primary-strong: #1e40af;
+  --primary-foreground: #ffffff;
+  --muted-foreground: #64748b;
+  --accent: #f1f3f6;
+  --destructive: #dc2626;
+  --warn: #b45309;
+  --warn-bar: #f59e0b;
+  --success: #059669;
+  --border: #e4e7ec;
+  --input: #e4e7ec;
+  --ring: #2563eb;
+}
+[data-theme="salmon"] { --primary: #f43f5e; --primary-strong: #be123c; --ring: #fb7185; }
+[data-theme="beige"] { --primary: #a16207; --primary-strong: #713f12; --ring: #d97706; --card: #f9f7f3; --accent: #f3efe7; }
+[data-theme="blue"] { --primary: #0284c7; --primary-strong: #075985; --ring: #38bdf8; --card: #f5f8fb; }
+[data-theme="slate"] { --primary: #2563eb; --primary-strong: #1e40af; --ring: #2563eb; }
+
+* { box-sizing: border-box; border-color: var(--border); }
+html, body { margin: 0; }
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: var(--background);
+  color: var(--foreground);
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: inherit; }
+button:disabled { cursor: default; }
+svg { display: block; }
+.muted { color: var(--muted-foreground); }
+.m11 { font-size: 11px; color: var(--muted-foreground); }
+.m12 { font-size: 12px; color: var(--muted-foreground); }
+.m13 { font-size: 13px; color: var(--muted-foreground); }
+.b { font-weight: 600; }
+.warn { color: var(--warn); }
+.ok { color: var(--success); font-weight: 500; }
+.txt-primary { color: var(--primary); }
+.eyebrow { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; }
+.eyebrow.primary { color: var(--primary); margin-bottom: 8px; }
+
+.app { display: flex; min-height: 100vh; flex-direction: column; }
+
+/* header */
+.hd { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px; border-bottom: 1px solid var(--border); padding: 12px 16px; }
+@media (min-width: 768px) { .hd { padding: 12px 32px; } }
+@media (min-width: 1280px) { .hd { height: 64px; flex-wrap: nowrap; padding: 0 32px; } }
+.menu-btn { margin-left: -4px; border-radius: 6px; padding: 6px; color: var(--muted-foreground); }
+.menu-btn:hover { background: var(--accent); }
+@media (min-width: 1024px) { .menu-btn { display: none; } }
+.logo { display: flex; align-items: center; gap: 8px; }
+.logo-mark { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; background: var(--primary-strong); color: var(--primary-foreground); font-size: 13px; font-weight: 700; }
+.logo-text { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.goal { min-width: 0; border-left: 1px solid var(--border); padding-left: 24px; }
+.goal button { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 600; }
+.goal input { width: 224px; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font: inherit; font-size: 15px; font-weight: 600; color: var(--foreground); outline: none; }
+.goal input:focus { border-color: var(--primary); }
+.tabs { order: 99; display: flex; width: 100%; gap: 4px; overflow-x: auto; border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 4px; font-size: 12.5px; }
+@media (min-width: 640px) { .tabs { width: auto; } }
+@media (min-width: 1280px) { .tabs { order: 0; } }
+.tab { white-space: nowrap; border-radius: 999px; padding: 6px 16px; color: var(--muted-foreground); border: 1px solid transparent; transition: color .15s; }
+.tab:hover { color: var(--foreground); }
+.tab.on { border-color: var(--border); background: var(--background); font-weight: 600; color: var(--primary-strong); box-shadow: 0 1px 2px rgba(15, 23, 42, .06); }
+.hd-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+.dots { display: flex; align-items: center; gap: 6px; }
+.dot { width: 16px; height: 16px; border-radius: 50%; opacity: .7; transition: opacity .15s; }
+.dot:hover { opacity: 1; }
+.dot.on { opacity: 1; box-shadow: 0 0 0 2px var(--background), 0 0 0 3px rgba(15, 23, 42, .4); }
+.link-muted { color: var(--muted-foreground); }
+.link-muted:hover { color: var(--foreground); }
+.link-primary { color: var(--primary); font-weight: 500; }
+
+/* layout */
+.body { display: flex; flex: 1; }
+.side { display: none; width: 300px; flex-shrink: 0; border-right: 1px solid var(--border); }
+@media (min-width: 1024px) { .side { display: block; } }
+main { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 24px; padding: 24px 16px; }
+@media (min-width: 768px) { main { padding: 32px 40px; } }
+.topbar { margin-bottom: -8px; display: flex; justify-content: flex-end; gap: 16px; font-size: 12px; }
+
+/* menus */
+.menu-wrap { position: relative; display: inline-block; }
+.menu { position: absolute; z-index: 40; top: calc(100% + 4px); min-width: 240px; max-height: 320px; overflow-y: auto; background: var(--popover); border: 1px solid var(--border); border-radius: 6px; padding: 4px; box-shadow: 0 6px 16px rgba(15, 23, 42, .1); }
+.menu.left { left: 0; }
+.menu.right { right: 0; }
+.menu button { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; padding: 6px 8px; border-radius: 4px; font-size: 13px; text-align: left; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--foreground); }
+.menu button:hover { background: var(--accent); }
+
+/* sidebar */
+.sb { padding: 28px 24px; }
+.track { margin-bottom: 24px; display: flex; gap: 4px; border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 4px; font-size: 12px; }
+.track button { flex: 1; text-align: center; border-radius: 999px; padding: 4px 0; color: var(--muted-foreground); border: 1px solid transparent; }
+.track button.on { border-color: var(--border); background: var(--background); font-weight: 600; color: var(--primary-strong); }
+.grp-btn { margin-bottom: 4px; display: flex; align-items: center; gap: 4px; color: var(--muted-foreground); }
+.grp-btn:hover { color: var(--foreground); }
+.sb-title { margin-bottom: 24px; font-size: 18px; font-weight: 600; }
+.units { list-style: none; margin: 0; padding: 0; font-size: 13.5px; }
+.units li + li { margin-top: 20px; }
+.unit { display: block; width: 100%; text-align: left; transition: opacity .15s; }
+.unit:hover { opacity: .7; }
+.unit.active { margin: 0 -12px; width: calc(100% + 24px); border-radius: 12px; border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent); background: color-mix(in srgb, var(--primary) 5%, transparent); padding: 12px; }
+.unit.active:hover { opacity: 1; }
+.unit-row { margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.u-act { font-weight: 500; color: var(--primary-strong); }
+.bar { height: 4px; border-radius: 999px; background: var(--border); }
+.unit.active .bar { background: var(--background); }
+.bar > div { height: 4px; border-radius: 999px; background: var(--primary); }
+.bar > div.weak { background: var(--warn-bar); }
+.unit-note { margin-top: 8px; font-size: 11px; font-weight: 600; color: var(--muted-foreground); }
+.unit-note.warn { color: var(--warn); }
+
+/* detail */
+.ttl-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.ttl { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+@media (min-width: 768px) { .ttl { font-size: 26px; } }
+.ttl .sub { font-weight: 400; color: var(--muted-foreground); }
+.row-btns { display: flex; align-items: center; gap: 8px; }
+.pill-btn { display: flex; align-items: center; gap: 4px; border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; font-size: 12px; color: var(--muted-foreground); }
+.pill-btn:hover, .icon-btn:hover { color: var(--foreground); }
+.icon-btn { display: grid; border: 1px solid var(--border); border-radius: 999px; padding: 8px; color: var(--muted-foreground); }
+.grid3 { display: grid; gap: 20px; }
+@media (min-width: 768px) { .grid3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.card { border-radius: var(--radius); border: 1px solid var(--border); background: var(--card); padding: 24px; }
+.card-label { margin-bottom: 16px; font-size: 12px; font-weight: 600; color: var(--primary-strong); }
+.princ { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+.princ li { display: flex; gap: 12px; }
+.princ li + li { margin-top: 12px; }
+.num { width: 20px; height: 20px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--border); background: var(--background); font-size: 11px; }
+.muted-p { margin: 0; font-size: 13px; color: var(--muted-foreground); }
+.insight { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; font-size: 13px; }
+.insight summary { cursor: pointer; font-weight: 500; }
+.insight p { margin: 8px 0 0; line-height: 1.65; color: var(--muted-foreground); }
+.ref + .ref { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
+.ref-book { font-size: 14px; color: var(--muted-foreground); }
+.ref-page { margin-top: 8px; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.small-pill { margin-top: 16px; display: inline-flex; border: 1px solid var(--border); background: var(--background); border-radius: 999px; padding: 4px 12px; font-size: 12px; }
+.small-pill:hover { border-color: color-mix(in srgb, var(--primary) 40%, transparent); }
+.check-card { display: flex; flex-direction: column; }
+.check-row { display: flex; justify-content: space-between; width: 100%; padding: 8px 0; font-size: 14px; }
+.check-row.bb { border-bottom: 1px solid var(--border); }
+.btn-primary { margin-top: 16px; height: 40px; border-radius: 10px; background: var(--primary); color: var(--primary-foreground); font-size: 13px; font-weight: 600; text-align: center; transition: background .15s; }
+.btn-primary:hover:not(:disabled) { background: var(--primary-strong); }
+.btn-primary:disabled { opacity: .4; }
+@media (min-width: 768px) { .check-card .btn-primary { margin-top: auto; } }
+
+/* listening */
+.lgrid { display: grid; gap: 20px; }
+@media (min-width: 768px) { .lgrid { grid-template-columns: 1fr 1.4fr; } }
+.causes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cause { border-radius: 12px; border: 1px solid var(--border); background: var(--background); padding: 12px; text-align: left; transition: border-color .15s; }
+.cause:hover { border-color: color-mix(in srgb, var(--primary) 30%, transparent); }
+.cause.on { border-color: color-mix(in srgb, var(--primary) 30%, transparent); background: color-mix(in srgb, var(--primary) 5%, transparent); }
+.cause-l { font-size: 13px; font-weight: 500; }
+.cause.on .cause-l { color: var(--primary-strong); }
+.cause-h { margin-top: 4px; font-size: 11px; line-height: 1.35; color: var(--muted-foreground); }
+.two { display: grid; gap: 12px; }
+@media (min-width: 640px) { .two { grid-template-columns: 1fr 1fr; } }
+.fl { font-size: 11px; color: var(--muted-foreground); }
+.ta { margin-top: 4px; display: block; width: 100%; min-height: 96px; border: 1px solid var(--input); border-radius: 6px; background: var(--background); padding: 8px 12px; font: inherit; font-size: 13px; color: var(--foreground); resize: vertical; outline: none; }
+.ta:focus { box-shadow: 0 0 0 1px var(--ring); }
+#lp-diff p { margin: 16px 0 0; font-size: 13px; line-height: 1.65; }
+.miss { border-radius: 4px; background: color-mix(in srgb, var(--warn-bar) 20%, transparent); padding: 0 2px; color: var(--warn); }
+
+/* list */
+.btn { height: 36px; border-radius: 10px; padding: 0 16px; font-size: 13px; white-space: nowrap; }
+.btn.ghost { border: 1px solid var(--border); font-weight: 500; }
+.btn.ghost:hover { background: var(--accent); }
+.btn.pri { background: var(--primary); color: var(--primary-foreground); font-weight: 600; }
+.btn.pri:hover:not(:disabled) { background: var(--primary-strong); }
+.btn.pri:disabled { opacity: .4; }
+.btn.danger { color: var(--destructive); }
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sel { height: 32px; border-radius: 999px; border: 1px solid var(--border); background: var(--background); padding: 0 12px; font: inherit; font-size: 12px; color: var(--foreground); outline: none; }
+.sel:focus { border-color: var(--primary); }
+.search { position: relative; display: block; }
+.search svg { position: absolute; left: 12px; top: 8px; color: var(--muted-foreground); pointer-events: none; }
+.search input { width: 224px; padding-left: 32px; }
+.tbl-wrap { overflow: hidden; border-radius: var(--radius); border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead { background: var(--card); text-align: left; font-size: 11px; color: var(--muted-foreground); }
+th { padding: 10px 20px; font-weight: 500; }
+th.px3, td.px3 { padding-left: 12px; padding-right: 12px; }
+td { padding: 12px 20px; }
+tbody tr { border-top: 1px solid var(--border); cursor: pointer; }
+tbody tr:hover { background: var(--card); }
+.r { text-align: right; }
+.trunc { max-width: 256px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hide-sm, .hide-md { display: none; }
+@media (min-width: 640px) { .hide-sm { display: table-cell; } }
+@media (min-width: 768px) { .hide-md { display: table-cell; } }
+.empty { padding: 56px 24px; text-align: center; }
+.empty p { margin: 0; }
+
+/* bottom */
+.bottom { margin-top: auto; display: grid; gap: 20px; }
+@media (min-width: 768px) { .bottom { grid-template-columns: 320px 1fr; } }
+.bcard { border-radius: var(--radius); border: 1px solid var(--border); padding: 24px; min-width: 0; }
+.ring-card { display: flex; align-items: center; gap: 24px; }
+.ring { width: 96px; height: 96px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; }
+.ring-in { width: 84px; height: 84px; display: grid; place-items: center; border-radius: 50%; background: var(--background); font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+.log { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.log li { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; }
+.log li + li { border-top: 1px solid var(--border); }
+.log .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log .a { flex-shrink: 0; font-size: 12px; color: var(--muted-foreground); }
+.stack { display: flex; height: 8px; overflow: hidden; border-radius: 999px; background: var(--border); }
+.cause-list { list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; font-size: 13px; }
+.cause-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cause-list .sw { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-right: 8px; }
+
+/* sheet */
+.overlay { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .6); }
+.sheet { position: fixed; top: 0; bottom: 0; left: 0; z-index: 51; width: 300px; max-width: 85vw; overflow-y: auto; background: var(--background); border-right: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0, 0, 0, .2); }
+.sheet-x { position: absolute; right: 16px; top: 16px; color: var(--muted-foreground); }
+
+/* dialogs */
+dialog { position: fixed; border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: min(576px, calc(100% - 32px)); max-height: 90vh; overflow-y: auto; color: var(--foreground); background: var(--background); box-shadow: 0 20px 40px rgba(0, 0, 0, .2); }
+dialog.sm { width: min(448px, calc(100% - 32px)); }
+dialog::backdrop { background: rgba(0, 0, 0, .6); }
+.dlg-x { position: absolute; right: 16px; top: 16px; color: var(--muted-foreground); }
+.dlg-title { margin: 0; padding-right: 24px; font-size: 18px; font-weight: 600; }
+.dlg-desc { margin: 6px 0 16px; font-size: 14px; color: var(--muted-foreground); }
+.fgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.fstack { margin-top: 16px; display: grid; gap: 16px; }
+.field { display: grid; gap: 4px; font-size: 12px; color: var(--muted-foreground); min-width: 0; }
+.inp { width: 100%; height: 36px; border: 1px solid var(--input); border-radius: 6px; background: var(--background); padding: 0 8px; font: inherit; font-size: 14px; color: var(--foreground); outline: none; }
+.inp:focus { box-shadow: 0 0 0 1px var(--ring); }
+textarea.inp { height: auto; padding: 8px; resize: vertical; }
+.dlg-actions { margin-top: 20px; display: flex; justify-content: space-between; gap: 8px; }
+.sim-actions { margin-top: 16px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.tags { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { border-radius: 999px; border: 1px solid var(--border); background: var(--background); padding: 2px 10px; font-size: 12px; }
+.empty-s { padding: 24px 0; text-align: center; }
+.empty-s p { margin: 0; }
+
+/* toast */
+#toasts { position: fixed; bottom: 16px; right: 16px; left: 16px; z-index: 100; display: grid; justify-items: end; gap: 8px; pointer-events: none; }
+.toast { pointer-events: auto; display: flex; align-items: center; gap: 8px; max-width: 360px; background: var(--background); border: 1px solid var(--border); box-shadow: 0 6px 16px rgba(15, 23, 42, .12); border-radius: 8px; padding: 12px 16px; font-size: 13px; animation: tin .2s ease-out; }
+.toast .ic { color: var(--success); }
+.toast.err .ic { color: var(--destructive); }
+@keyframes tin { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toasts"></div>
+<dialog id="dlg-problem"></dialog>
+<dialog id="dlg-similar" class="sm"></dialog>
+<input type="file" id="imp" accept="application/json,.json" hidden>
+<script>
+"use strict";
+
+/* ---------- data: units & seed problems ---------- */
+const u = (subject, group, names, track) =>
+  names.map((name) => ({ id: `${subject}:${group}:${name}`, subject, group, name, ...(track ? { track } : {}) }));
+
+const UNITS = [
+  ...u("math", "数I", ["数と式", "集合と論証", "二次関数", "図形と計量", "データの分析"]),
+  ...u("math", "数A", ["場合の数", "確率", "整数の性質", "図形の性質"]),
+  ...u("math", "数II", ["式と証明", "複素数と方程式", "図形と方程式", "三角関数", "指数・対数関数", "微分法(II)", "積分法(II)"]),
+  ...u("math", "数B", ["数列", "統計的な推測"]),
+  ...u("math", "数C", ["ベクトル", "平面上の曲線", "複素数平面"]),
+  ...u("math", "数III 微分・積分", ["微分・積分の計算", "極限と関数の連続性", "微分の応用・最大最小", "定積分の応用・面積体積"]),
+  ...u("physics", "力学", ["等加速度運動", "運動方程式", "運動量と力積", "円運動・単振動", "万有引力"]),
+  ...u("physics", "電磁気", ["静電場", "コンデンサー", "直流回路", "電磁誘導", "交流"]),
+  ...u("physics", "波動", ["波の性質", "音波・ドップラー", "光の干渉"]),
+  ...u("physics", "熱", ["気体分子運動論", "熱力学第一法則"]),
+  ...u("physics", "原子", ["光電効果・粒子性", "原子核"]),
+  ...u("english", "共テ リーディング", ["第1問 広告・掲示", "第2問 事実と意見", "第3問 体験記", "第4問 複数資料", "第5問 物語要約", "第6問 論説・説明文"], "reading"),
+  ...u("english", "二次 英語", ["英文和訳", "要約", "自由英作文"], "reading"),
+  ...u("english", "共テ リスニング", [
+    "第1問A 短文・発話内容",
+    "第1問B 短文・イラスト選択",
+    "第2問 対話・イラスト",
+    "第3問 対話・応答",
+    "第4問A 図表完成",
+    "第4問B 条件照合",
+    "第5問 講義・ワークシート",
+    "第6問 長い対話・議論",
+  ], "listening"),
+];
+
+const uid = (subject, group, name) => `${subject}:${group}:${name}`;
+
+let seedN = 0;
+function mk(p, exam = "二次") {
+  seedN++;
+  return { id: `seed-${seedN}`, exam, difficulty: 3, insight: "", refs: [], step1: false, step2: false, updatedAt: 0, ...p };
+}
+
+function series(unit, count, full, half, pool, label, insight, refs) {
+  const sources = [
+    [2024, "二次", "京都大 理系", "第3問"],
+    [2022, "二次", "東京大 理科", "第4問"],
+    [2021, "二次", "東京工業大", "第2問"],
+    [2020, "二次", "大阪大 理系", "第5問"],
+    [2019, "二次", "東北大 理系", "第4問"],
+    [2018, "二次", "名古屋大 理系", "第2問"],
+    [2017, "二次", "九州大 理系", "第3問"],
+    [2016, "二次", "北海道大 理系", "第5問"],
+    [2015, "二次", "東京大 理科", "第3問"],
+    [2014, "二次", "京都大 理系", "第6問"],
+  ];
+  return Array.from({ length: count }, (_, i) => {
+    const s = sources[i % sources.length];
+    return mk({
+      subject: "math",
+      unitId: uid("math", "数III 微分・積分", unit),
+      year: s[0], school: s[2], part: s[3], label,
+      difficulty: 3 + (i % 3),
+      principles: pool[i % pool.length],
+      insight, refs,
+      step1: i < full + half,
+      step2: i < full,
+    }, s[1]);
+  });
+}
+
+function buildSeed() {
+  seedN = 0;
+  const featured = mk({
+    id: "todai-2023-1",
+    subject: "math",
+    unitId: uid("math", "数III 微分・積分", "定積分の応用・面積体積"),
+    year: 2023, school: "東京大 理科", part: "第1問", label: "数III 微積分", difficulty: 4,
+    principles: ["対称性の確認", "変数分離", "積分区間の置換パターン"],
+    insight: "被積分関数の形を見る前に「区間と関数に対称性があるか」を確かめる。対称性で積分を半分に畳み、残りは置換で区間を標準形に揃えると計算が一本道になる。解けない時は、置換の“前後で区間がどう変わるか”を自分で書けるかを確認する。",
+    refs: [{ book: "一対一対応の演習 数III", page: "p.88 例題4" }],
+    step1: true, step2: false,
+  });
+
+  const math = [
+    ...series("微分・積分の計算", 10, 9, 1, [["置換積分の型判定"], ["部分積分の反復"], ["対数微分法"]], "数III 微積分",
+      "被積分関数を「合成関数×中身の微分」に分解できるかを先に判定する。", [{ book: "青チャート 数III", page: "p.212 例題130" }]),
+    ...series("極限と関数の連続性", 5, 4, 0, [["はさみうちの原理"], ["区分求積法"]], "数III 極限",
+      "評価式を作れるか＝上下から挟む2つの式を自分で用意できるかが鍵。", [{ book: "一対一対応の演習 数III", page: "p.24 例題6" }]),
+    ...series("微分の応用・最大最小", 5, 2, 2, [["文字定数分離"], ["増減表の作成"], ["対称性の確認", "増減表の作成"]], "数III 微分",
+      "文字定数を片側に分離し、グラフと直線の交点問題に読み替える。", [{ book: "一対一対応の演習 数III", page: "p.56 例題3" }]),
+    featured,
+    ...series("定積分の応用・面積体積", 9, 3, 2, [["回転体の体積・断面"], ["対称性の確認", "回転体の体積・断面"], ["積分区間の置換パターン"]], "数III 積分",
+      "立体は「どの軸に垂直な断面で切るか」を決めた瞬間に解ける問題になる。", [{ book: "一対一対応の演習 数III", page: "p.92 例題6" }]),
+  ];
+
+  const mathOthers = [
+    ["数I", "二次関数", ["軸の位置で場合分け"], 2023, "共テ本試", "共通テスト IA", "第2問", true],
+    ["数I", "図形と計量", ["余弦定理で辺を確定"], 2022, "共テ本試", "共通テスト IA", "第1問", true],
+    ["数I", "データの分析", ["分散の定義式変形"], 2024, "共テ本試", "共通テスト IA", "第2問", false],
+    ["数I", "数と式", ["対称式は基本対称式で表す"], 2021, "共テ追試", "共通テスト IA", "第1問", true],
+    ["数A", "確率", ["余事象で数える"], 2023, "二次", "東京大 理科", "第2問", true],
+    ["数A", "整数の性質", ["余りで分類する"], 2022, "二次", "京都大 理系", "第4問", true],
+    ["数A", "場合の数", ["区別の有無を先に決める"], 2024, "共テ本試", "共通テスト IA", "第3問", false],
+    ["数II", "三角関数", ["合成で1つの三角関数に"], 2023, "共テ本試", "共通テスト IIB", "第1問", true],
+    ["数II", "指数・対数関数", ["底をそろえて置換"], 2022, "共テ本試", "共通テスト IIB", "第1問", true],
+    ["数II", "微分法(II)", ["文字定数分離"], 2021, "共テ本試", "共通テスト IIB", "第2問", true],
+    ["数II", "図形と方程式", ["軌跡はパラメータ消去"], 2020, "二次", "大阪大 理系", "第1問", false],
+    ["数B", "数列", ["漸化式の型判定"], 2023, "二次", "東京大 理科", "第3問", true],
+    ["数C", "ベクトル", ["始点をそろえて1次独立で係数比較"], 2024, "二次", "京都大 理系", "第2問", true],
+    ["数C", "複素数平面", ["回転と拡大を極形式で"], 2022, "二次", "東京工業大", "第3問", true],
+  ];
+  const math2 = mathOthers.map(([g, name, principles, year, exam, school, part, both]) =>
+    mk({ subject: "math", unitId: uid("math", g, name), year, school, part, label: `${g} ${name}`, principles, insight: "", step1: true, step2: both }, exam));
+
+  const phys = [
+    ["力学", "運動量と力積", ["運動量保存は系と外力を先に決める"], 2023, "二次", "東京大", "第1問", true, false, "物体系を決め、その系に働く外力の力積がゼロかを最初に判定する。"],
+    ["力学", "円運動・単振動", ["つりあいの位置を原点に取る"], 2022, "二次", "京都大", "第1問", true, true, "つりあいの位置からのずれで運動方程式を書けば、単振動の形が自動的に現れる。"],
+    ["力学", "運動方程式", ["力の図示→軸ごとの運動方程式"], 2024, "共テ本試", "共通テスト 物理", "第1問", true, true, ""],
+    ["電磁気", "電磁誘導", ["磁束の変化から起電力の向き"], 2023, "共テ本試", "共通テスト 物理", "第3問", false, false, "磁束Φの時間変化を式で書き、レンツの法則で向きを先に決める。"],
+    ["電磁気", "コンデンサー", ["孤立部分の電荷保存"], 2022, "二次", "東京工業大", "第2問", true, false, ""],
+    ["電磁気", "交流", ["位相のずれをベクトル図で"], 2021, "二次", "大阪大", "第3問", false, false, ""],
+    ["波動", "光の干渉", ["光路差＝経路差×屈折率"], 2023, "二次", "東京大", "第3問", true, false, "2つの経路の光路差を書き出し、反射での位相反転の有無を必ずチェックする。"],
+    ["波動", "音波・ドップラー", ["観測者・音源の速度を分けて考える"], 2024, "共テ本試", "共通テスト 物理", "第2問", true, true, ""],
+    ["熱", "熱力学第一法則", ["ΔU=Q-W の符号規約を固定"], 2022, "共テ本試", "共通テスト 物理", "第4問", true, false, ""],
+    ["熱", "気体分子運動論", ["1分子の運動量変化→圧力"], 2020, "二次", "名古屋大", "第3問", false, false, ""],
+    ["原子", "光電効果・粒子性", ["エネルギー保存 hν=W+K"], 2023, "共テ追試", "共通テスト 物理", "第4問", true, true, ""],
+  ];
+  const physics = phys.map(([g, name, principles, year, exam, school, part, s1, s2, insight]) =>
+    mk({ subject: "physics", unitId: uid("physics", g, name), year, school, part, label: `${g} ${name}`, principles, insight,
+      refs: [{ book: "名問の森 物理", page: "p.40 問題12" }], step1: s1, step2: s2 }, exam));
+
+  const L = "共テ リスニング";
+  const english = [
+    mk({
+      subject: "english", unitId: uid("english", L, "第5問 講義・ワークシート"), year: 2023, school: "共通テスト リスニング", part: "第5問",
+      label: "講義・ワークシート", difficulty: 4, principles: ["ワークシートの空欄を先読みして待ち構える"],
+      insight: "音声が流れる前にワークシートの空欄の品詞と数値の単位を予想しておく。聞くのは“答えの形”だけ。",
+      refs: [{ book: "英語の発音・ルール講義", page: "p.34 弱形" }], step1: true,
+      listening: {
+        causes: ["preread", "speed"],
+        script: "In the past, most people worked in agriculture, but now only a small percentage of workers are farmers.",
+        heard: "In the past most people worked in agriculture but now only small percentage are farmers.",
+      },
+    }, "共テ本試"),
+    mk({
+      subject: "english", unitId: uid("english", L, "第3問 対話・応答"), year: 2022, school: "共通テスト リスニング", part: "第3問",
+      label: "対話・応答", principles: ["話者の意図は最後の発話で決まる"], insight: "", step1: true, step2: true,
+      listening: { causes: ["sound"], script: "I'd rather not go out tonight.", heard: "I rather not go out tonight." },
+    }, "共テ本試"),
+    mk({
+      subject: "english", unitId: uid("english", L, "第1問B 短文・イラスト選択"), year: 2024, school: "共通テスト リスニング", part: "第1問B",
+      label: "短文・イラスト選択", principles: ["イラストの差分を先に言語化"], insight: "", step1: false,
+      listening: { causes: ["sound", "vocab"], script: "", heard: "" },
+    }, "共テ本試"),
+    mk({
+      subject: "english", unitId: uid("english", L, "第4問A 図表完成"), year: 2021, school: "共通テスト リスニング", part: "第4問A",
+      label: "図表完成", principles: ["ワークシートの空欄を先読みして待ち構える"], insight: "", step1: true,
+      listening: { causes: ["preread"], script: "", heard: "" },
+    }, "共テ追試"),
+    mk({
+      subject: "english", unitId: uid("english", "共テ リーディング", "第6問 論説・説明文"), year: 2023, school: "共通テスト リーディング", part: "第6問",
+      label: "論説文", principles: ["段落ごとの主張を一文で要約"], insight: "設問より先に各段落の役割（主張・例・反論）を一言でメモする。", step1: true,
+    }, "共テ本試"),
+    mk({
+      subject: "english", unitId: uid("english", "二次 英語", "要約"), year: 2022, school: "東京大", part: "第1問A",
+      label: "要約", principles: ["段落ごとの主張を一文で要約"], insight: "", step1: false,
+    }, "二次"),
+  ];
+  return { problems: [...math, ...math2, ...physics, ...english], featuredId: featured.id };
+}
+
+function seedLog(now) {
+  return [
+    { id: "l1", text: "東大2023 第1問 — 再現チェック更新", at: now - 2 * 60000, synced: false },
+    { id: "l2", text: "定積分の応用 — 弱点タグ追加", at: now - 18 * 60000, synced: false },
+    { id: "l3", text: "一対一対応 p.88 — 逆引きリンク作成", at: now - 60 * 60000, synced: false },
+  ];
+}
+
+/* ---------- logic ---------- */
+const problemScore = (p) => (p.step1 ? 0.5 : 0) + (p.step1 && p.step2 ? 0.5 : 0);
+function unitMastery(problems, unitId) {
+  const list = problems.filter((p) => p.unitId === unitId);
+  if (list.length === 0) return null;
+  return Math.round((list.reduce((s, p) => s + problemScore(p), 0) / list.length) * 100);
+}
+function coverage(units, problems) {
+  if (units.length === 0) return 0;
+  const covered = units.filter((x) => problems.some((p) => p.unitId === x.id && p.step1)).length;
+  return Math.round((covered / units.length) * 100);
+}
+function similarFor(target, problems) {
+  const tags = new Set(target.principles);
+  return problems
+    .filter((p) => p.id !== target.id && p.principles.some((t) => tags.has(t)))
+    .map((p) => ({ p, n: p.principles.filter((t) => tags.has(t)).length }))
+    .sort((a, b) => b.n - a.n)
+    .map((x) => x.p);
+}
+const CAUSES = [
+  { id: "sound", label: "音声変化・脱落", hint: "連結・脱落・弱形で単語が認識できない" },
+  { id: "vocab", label: "語彙・表現", hint: "音は取れたが意味が出てこない" },
+  { id: "speed", label: "処理速度・返り読み", hint: "理解が音に追いつかず置いていかれる" },
+  { id: "preread", label: "先読み・待ち構え不足", hint: "何を聞き取るべきか準備できていない" },
+];
+function causeCounts(problems) {
+  const c = { sound: 0, vocab: 0, speed: 0, preread: 0 };
+  for (const p of problems) for (const k of (p.listening?.causes ?? [])) c[k]++;
+  return c;
+}
+function relTime(at, now) {
+  const m = Math.max(0, Math.floor((now - at) / 60000));
+  if (m < 1) return "たった今";
+  if (m < 60) return `${m}分前`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}時間前`;
+  return `${Math.floor(h / 24)}日前`;
+}
+const problemTitle = (p) => `${p.year} ${p.school} ${p.part}`;
+function missedWords(script, heard) {
+  const norm = (s) => s.toLowerCase().replace(/[^a-z0-9'\s]/g, " ").split(/\s+/).filter(Boolean);
+  const got = new Set(norm(heard));
+  return new Set(norm(script).filter((w) => !got.has(w)));
+}
+const stepTxt = (p) => (p.step1 && p.step2 ? "2/2" : p.step1 ? "1/2" : "0/2");
+
+/* ---------- constants & helpers ---------- */
+const SUBJECTS = [
+  { id: "math", label: "数学I・A・II・B・C・III" },
+  { id: "physics", label: "物理" },
+  { id: "english", label: "英語" },
+];
+const THEMES = [
+  { id: "salmon", label: "サーモン/ピンク", color: "#f43f5e" },
+  { id: "beige", label: "ベージュ/カーキ", color: "#a16207" },
+  { id: "blue", label: "ホワイトブルー", color: "#0284c7" },
+  { id: "slate", label: "スレート", color: "#2563eb" },
+];
+const EXAMS = ["共テ本試", "共テ追試", "二次", "センター"];
+const OPACITIES = [1, 0.65, 0.4, 0.2];
+
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const newId = () => (window.crypto?.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+const svg = (w, path, extra = "") => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ${extra}>${path}</svg>`;
+const I = {
+  menu: svg(20, '<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>'),
+  chev: svg(12, '<path d="m6 9 6 6 6-6"/>'),
+  pencil: svg(14, '<path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/><path d="m15 5 4 4"/>'),
+  search: svg(16, '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'),
+  x: svg(16, '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'),
+  check: svg(16, '<path d="M20 6 9 17l-5-5"/>'),
+  alert: svg(16, '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'),
+};
+
+/* ---------- state ---------- */
+const KEY = "study-compass:v1";
+function initial() {
+  const seed = buildSeed();
+  return {
+    goal: "東大理系 / 共通テスト88%",
+    theme: "slate",
+    subject: "math",
+    selected: { math: seed.featuredId, physics: undefined, english: undefined },
+    view: { kind: "detail" },
+    problems: seed.problems,
+    log: seedLog(Date.now()),
+  };
+}
+let S = initial();
+try {
+  const raw = localStorage.getItem(KEY);
+  if (raw) {
+    const saved = JSON.parse(raw);
+    delete saved.view;
+    S = { ...S, ...saved };
+  }
+} catch (e) { /* corrupted storage: keep defaults */ }
+
+const ui = {
+  group: null, groupKey: null, openMenu: null, editingGoal: false, sheet: false,
+  f: { q: "", year: "", exam: "", diff: "", status: "" },
+  editing: null, form: null, simP: null, simIdx: 0,
+};
+
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage full or blocked */ }
+  document.documentElement.dataset.theme = S.theme;
+}
+function commit() { save(); render(); }
+const logEntry = (text) => ({ id: newId(), text, at: Date.now(), synced: false });
+const resetFilters = () => { ui.f = { q: "", year: "", exam: "", diff: "", status: "" }; };
+
+function selectProblem(id) {
+  const p = S.problems.find((x) => x.id === id);
+  if (!p) return;
+  S.subject = p.subject;
+  S.selected = { ...S.selected, [p.subject]: p.id };
+  S.view = { kind: "detail" };
+  commit();
+}
+function upsert(p0, log) {
+  const exists = S.problems.some((x) => x.id === p0.id);
+  const p = { ...p0, updatedAt: Date.now() };
+  S.problems = exists ? S.problems.map((x) => (x.id === p.id ? p : x)) : [p, ...S.problems];
+  S.selected = { ...S.selected, [p.subject]: p.id };
+  S.subject = p.subject;
+  S.view = { kind: "detail" };
+  S.log = [logEntry(log), ...S.log].slice(0, 50);
+  commit();
+}
+function removeProblem(id) {
+  S.problems = S.problems.filter((x) => x.id !== id);
+  S.selected = Object.fromEntries(Object.entries(S.selected).map(([k, v]) => [k, v === id ? undefined : v]));
+  S.view = { kind: "list" };
+  resetFilters();
+  commit();
+}
+function patchProblem(id, patch, log) {
+  S.problems = S.problems.map((x) => (x.id === id ? { ...x, ...patch, updatedAt: Date.now() } : x));
+  if (log) S.log = [logEntry(log), ...S.log].slice(0, 50);
+  commit();
+}
+function patchListening(id, patch, rerender) {
+  S.problems = S.problems.map((x) =>
+    x.id === id ? { ...x, listening: { causes: [], script: "", heard: "", ...x.listening, ...patch }, updatedAt: Date.now() } : x);
+  if (rerender) commit(); else save();
+}
+
+/* ---------- derived ---------- */
+function derive() {
+  const sp = S.problems.filter((p) => p.subject === S.subject);
+  const selected = sp.find((p) => p.id === S.selected[S.subject]) ?? sp.find((p) => p.listening) ?? sp[0];
+  const listUnit = S.view.kind === "list" ? S.view.unitId : undefined;
+  const activeUnitId = S.view.kind === "list" ? listUnit : selected?.unitId;
+  const activeUnit = UNITS.find((x) => x.id === activeUnitId);
+  const firstGroup = UNITS.find((x) => x.subject === S.subject).group;
+  const key = [S.subject, activeUnit?.group, activeUnit?.subject].join("|");
+  if (key !== ui.groupKey) {
+    ui.groupKey = key;
+    ui.group = activeUnit?.subject === S.subject ? activeUnit.group : firstGroup;
+  }
+  const groupIsListening = UNITS.find((x) => x.group === ui.group)?.track === "listening";
+  return { sp, selected, listUnit, activeUnitId, groupIsListening };
+}
+
+/* ---------- views ---------- */
+function header() {
+  return `<header class="hd">
+    <button class="menu-btn" data-act="sheet-open" aria-label="単元を開く">${I.menu}</button>
+    <div class="logo"><div class="logo-mark">逆</div><span class="logo-text">Gyakubiki</span></div>
+    <div class="goal">${ui.editingGoal
+      ? `<input id="goal-in" aria-label="目標" value="${esc(S.goal)}">`
+      : `<button data-act="goal-edit" title="目標を編集">${esc(S.goal)}</button>`}</div>
+    <nav class="tabs">${SUBJECTS.map((x) =>
+      `<button class="tab ${S.subject === x.id ? "on" : ""}" data-act="subject" data-id="${x.id}">${x.label}</button>`).join("")}</nav>
+    <div class="hd-right">
+      <div class="dots" role="radiogroup" aria-label="テーマカラー">${THEMES.map((t) =>
+        `<button class="dot ${S.theme === t.id ? "on" : ""}" role="radio" aria-checked="${S.theme === t.id}" title="${t.label}" aria-label="${t.label}" data-act="theme" data-id="${t.id}" style="background:${t.color}"></button>`).join("")}</div>
+      <div class="menu-wrap">
+        <button class="link-muted" style="font-size:12px" data-act="menu" data-menu="backup">バックアップ</button>
+        ${ui.openMenu === "backup" ? `<div class="menu right" style="min-width:200px">
+          <button data-act="export"><span>データを書き出す</span></button>
+          <button data-act="import"><span>データを読み込む</span></button>
+        </div>` : ""}
+      </div>
+    </div>
+  </header>`;
+}
+
+function sidebar(D) {
+  const su = UNITS.filter((x) => x.subject === S.subject);
+  const groups = [...new Set(su.map((x) => x.group))];
+  const units = su.filter((x) => x.group === ui.group);
+  const isL = units[0]?.track === "listening";
+  const gp = (g) => {
+    const v = su.filter((x) => x.group === g).map((x) => unitMastery(S.problems, x.id) ?? 0);
+    return Math.round(v.reduce((a, b) => a + b, 0) / v.length);
+  };
+  const track = S.subject === "english" ? `<div class="track">${["reading", "listening"].map((tr) =>
+    `<button class="${(tr === "listening") === isL ? "on" : ""}" data-act="group" data-g="${esc(su.find((x) => x.track === tr).group)}">${tr === "reading" ? "リーディング" : "リスニング"}</button>`).join("")}</div>` : "";
+  const items = units.map((x) => {
+    const m = unitMastery(S.problems, x.id);
+    const count = S.problems.filter((p) => p.unitId === x.id).length;
+    const weak = m !== null && m < 70;
+    const active = x.id === D.activeUnitId;
+    const note = m === null ? `<div class="unit-note">未着手</div>`
+      : m < 50 ? `<div class="unit-note warn">要対策</div>`
+      : active ? `<div class="unit-note" style="font-weight:400">${count}問</div>` : "";
+    return `<li><button class="unit ${active ? "active" : ""}" data-act="unit" data-id="${esc(x.id)}">
+      <div class="unit-row"><span class="${active ? "u-act" : ""}">${esc(x.name)}</span>
+      <span class="${m === null ? "muted" : "b"} ${weak ? "warn" : ""}">${m === null ? "—" : `${m}%`}</span></div>
+      <div class="bar"><div class="${weak ? "weak" : ""}" style="width:${m ?? 0}%"></div></div>${note}
+    </button></li>`;
+  }).join("");
+  return `<div class="sb">${track}
+    <div class="menu-wrap">
+      <button class="grp-btn eyebrow" data-act="menu" data-menu="grp">${esc(ui.group)} ${I.chev}</button>
+      ${ui.openMenu === "grp" ? `<div class="menu left">${groups.map((g) =>
+        `<button data-act="group" data-g="${esc(g)}"><span>${esc(g)}</span><span class="muted">${gp(g)}%</span></button>`).join("")}</div>` : ""}
+    </div>
+    <div class="sb-title">${isL ? "設問タイプ別マスタリー" : "単元マスタリー"}</div>
+    <ul class="units">${items}</ul>
+  </div>`;
+}
+
+function topbar(D) {
+  const left = S.view.kind === "list"
+    ? (D.selected ? `<button class="link-muted" data-act="to-detail">← 問題に戻る</button>` : "")
+    : `<button class="link-muted" data-act="to-list">過去問ストック</button>`;
+  return `<div class="topbar">${left}<button class="link-primary" data-act="add">＋ 追加</button></div>`;
+}
+
+function problemDetail(D) {
+  const p = D.selected;
+  const sib = D.sp.filter((x) => x.unitId === p.unitId);
+  const sibMenu = sib.length > 1 ? `<div class="menu-wrap">
+      <button class="pill-btn" data-act="menu" data-menu="sib">同じ単元 ${sib.length}問 ${I.chev}</button>
+      ${ui.openMenu === "sib" ? `<div class="menu right" style="width:288px">${sib.map((x) =>
+        `<button data-act="select" data-id="${esc(x.id)}"><span ${x.id === p.id ? 'style="font-weight:600"' : ""}>${esc(problemTitle(x))}</span><span class="m11">${stepTxt(x)}</span></button>`).join("")}</div>` : ""}
+    </div>` : "";
+  const card1 = `<section class="card"><div class="card-label">抽象原理・解法の型</div>
+    ${p.principles.length
+      ? `<ol class="princ">${p.principles.map((t, i) => `<li><span class="num">${i + 1}</span><span>${esc(t)}</span></li>`).join("")}</ol>`
+      : `<p class="muted-p">解法の型がまだありません。編集から追加しましょう。</p>`}
+    ${p.insight ? `<details class="insight"><summary>何が分かれば解けるか</summary><p>${esc(p.insight)}</p></details>` : ""}
+  </section>`;
+  const card2 = `<section class="card"><div class="card-label">参考書逆引き</div>
+    ${p.refs.length
+      ? p.refs.map((r) => `<div class="ref"><div class="ref-book">${esc(r.book)}</div><div class="ref-page">${esc(r.page)}</div></div>`).join("")
+      : `<p class="muted-p">この原理を補強する参考書のページを紐付けましょう。</p>`}
+    <button class="small-pill" data-act="edit">${p.refs.length ? "辞書参照" : "ページを追加"}</button>
+  </section>`;
+  const card3 = `<section class="card check-card"><div class="card-label">2段階再現チェック</div>
+    <button class="check-row bb" data-act="step1"><span>同一問題</span><span class="${p.step1 ? "ok" : "txt-primary"}">${p.step1 ? "済" : "自力で再現できた"}</span></button>
+    <div class="check-row"><span>類題テスト</span><span class="${p.step2 ? "ok" : "muted"}">${p.step2 ? "済" : "未実施"}</span></div>
+    <button class="btn-primary" data-act="similar" ${p.step1 ? "" : "disabled"}>類題を呼び出す</button>
+    ${p.step1 ? "" : `<p class="m11" style="margin:8px 0 0">先に同一問題を自力で再現しましょう</p>`}
+  </section>`;
+  return `<div class="ttl-row">
+      <div style="min-width:0"><div class="eyebrow primary">Past Exam</div>
+        <h1 class="ttl">${esc(problemTitle(p))} <span class="sub">(${esc(p.label)})</span></h1></div>
+      <div class="row-btns">${sibMenu}<button class="icon-btn" data-act="edit" aria-label="編集">${I.pencil}</button></div>
+    </div>
+    <div class="grid3">${card1}${card2}${card3}</div>
+    ${p.listening ? listeningPanel(p) : ""}`;
+}
+
+function diffHtml(l) {
+  if (!l.script || !l.heard) return "";
+  const missed = missedWords(l.script, l.heard);
+  return `<p>${l.script.split(/(\s+)/).map((w) => {
+    const k = w.toLowerCase().replace(/[^a-z0-9']/g, "");
+    return k && missed.has(k) ? `<span class="miss">${esc(w)}</span>` : esc(w);
+  }).join("")}</p>`;
+}
+
+function listeningPanel(p) {
+  const l = p.listening ?? { causes: [], script: "", heard: "" };
+  return `<div class="lgrid">
+    <section class="card"><div class="card-label">聞き取れなかった原因</div>
+      <div class="causes">${CAUSES.map((c) => {
+        const on = l.causes.includes(c.id);
+        return `<button class="cause ${on ? "on" : ""}" aria-pressed="${on}" data-act="cause" data-id="${c.id}"><div class="cause-l">${c.label}</div><div class="cause-h">${c.hint}</div></button>`;
+      }).join("")}</div>
+    </section>
+    <section class="card"><div class="card-label">スクリプト照合</div>
+      <div class="two">
+        <label class="fl">スクリプト<textarea class="ta" data-lp="script" placeholder="正解のスクリプトを貼り付け">${esc(l.script)}</textarea></label>
+        <label class="fl">自分の聞き取り<textarea class="ta" data-lp="heard" placeholder="聞こえた通りに書き取る">${esc(l.heard)}</textarea></label>
+      </div>
+      <div id="lp-diff">${diffHtml(l)}</div>
+    </section>
+  </div>`;
+}
+
+function listBase(unitId) {
+  return S.problems.filter((p) => p.subject === S.subject && (!unitId || p.unitId === unitId));
+}
+
+function tableHtml(unitId) {
+  const base = listBase(unitId);
+  const f = ui.f;
+  const rows = base
+    .filter((p) => !f.year || p.year === Number(f.year))
+    .filter((p) => !f.exam || p.exam === f.exam)
+    .filter((p) => !f.diff || p.difficulty === Number(f.diff))
+    .filter((p) => !f.status || (f.status === "0" ? !p.step1 : f.status === "1" ? p.step1 && !p.step2 : p.step1 && p.step2))
+    .filter((p) => {
+      if (!f.q) return true;
+      const hay = `${problemTitle(p)} ${p.label} ${p.principles.join(" ")} ${p.refs.map((r) => r.book).join(" ")}`;
+      return hay.toLowerCase().includes(f.q.toLowerCase());
+    })
+    .sort((a, b) => b.year - a.year);
+  if (rows.length === 0) {
+    const none = base.length === 0;
+    return `<div class="empty">
+      <p style="font-size:14px;font-weight:500">${none ? "この単元の過去問はまだありません" : "条件に合う過去問がありません"}</p>
+      <p class="m12" style="margin-top:4px">${none ? "穴を作らないために、まず1問追加しましょう。" : "フィルターをゆるめてみましょう。"}</p>
+      ${none ? `<button class="btn pri" style="margin-top:16px" data-act="add">過去問を追加</button>` : ""}
+    </div>`;
+  }
+  return `<table><thead><tr>
+      <th>問題</th><th class="px3 hide-md">解法の型</th><th class="px3 hide-sm">区分</th><th class="px3 hide-sm">難易度</th><th class="r">再現</th>
+    </tr></thead><tbody>${rows.map((p) => `<tr data-act="select" data-id="${esc(p.id)}">
+      <td><div style="font-weight:500">${esc(problemTitle(p))}</div><div class="m11">${esc(p.label)}</div></td>
+      <td class="px3 hide-md muted"><div class="trunc">${esc(p.principles.join("・"))}</div></td>
+      <td class="px3 hide-sm muted">${esc(p.exam)}</td>
+      <td class="px3 hide-sm muted">${"★".repeat(p.difficulty)}</td>
+      <td class="r"><span style="font-size:12px;font-weight:500" class="${p.step1 && p.step2 ? "ok" : p.step1 ? "txt-primary" : "muted"}">${stepTxt(p)}</span></td>
+    </tr>`).join("")}</tbody></table>`;
+}
+
+function problemList(D) {
+  const unitId = D.listUnit;
+  const unit = UNITS.find((x) => x.id === unitId);
+  const base = listBase(unitId);
+  const years = [...new Set(base.map((p) => p.year))].sort((a, b) => b - a);
+  const f = ui.f;
+  const opt = (v, l, cur) => `<option value="${v}" ${String(cur) === String(v) ? "selected" : ""}>${l}</option>`;
+  return `<div class="ttl-row">
+      <div><div class="eyebrow primary">Past Exam Stock</div>
+        <h1 class="ttl">${unit ? esc(unit.name) : "過去問ストック"} <span class="sub">(${base.length}問)</span></h1></div>
+      <div class="row-btns">
+        ${unitId ? `<button class="btn ghost" data-act="show-all">すべて表示</button>` : ""}
+        <button class="btn pri" data-act="add">過去問を追加</button>
+      </div>
+    </div>
+    <div class="filters">
+      <label class="search">${I.search}<input class="sel" data-f="q" value="${esc(f.q)}" placeholder="大学・原理・参考書で検索"></label>
+      <select class="sel" data-f="year" aria-label="年度">${opt("", "年度", f.year)}${years.map((y) => opt(y, y, f.year)).join("")}</select>
+      <select class="sel" data-f="exam" aria-label="試験区分">${opt("", "試験区分", f.exam)}${EXAMS.map((x) => opt(x, x, f.exam)).join("")}</select>
+      <select class="sel" data-f="diff" aria-label="難易度">${opt("", "難易度", f.diff)}${[1, 2, 3, 4, 5].map((x) => opt(x, "★".repeat(x), f.diff)).join("")}</select>
+      <select class="sel" data-f="status" aria-label="再現ステータス">${opt("", "再現ステータス", f.status)}${opt("0", "未再現", f.status)}${opt("1", "同一問題のみ", f.status)}${opt("2", "類題までクリア", f.status)}</select>
+    </div>
+    <div class="tbl-wrap" id="pl-table">${tableHtml(unitId)}</div>`;
+}
+
+function bottom(D) {
+  const pct = coverage(UNITS.filter((x) => x.subject === S.subject), S.problems);
+  const ring = `<section class="bcard ring-card">
+    <div class="ring" style="background:conic-gradient(var(--primary) 0 ${pct}%, var(--border) 0)">
+      <div class="ring-in"><span>${pct}<span style="font-size:14px">%</span></span></div>
+    </div>
+    <div><div style="font-size:14px;font-weight:500">単元網羅率</div><div class="m11" style="margin-top:4px">1問以上自力再現できた単元の割合</div></div>
+  </section>`;
+  let right;
+  if (S.subject === "english" && D.groupIsListening) {
+    const counts = causeCounts(S.problems.filter((p) => p.subject === "english"));
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    right = `<section class="bcard"><div class="m12 b" style="margin-bottom:12px">原因比率（リスニング全体）</div>
+      ${total === 0 ? `<p class="m13" style="margin:0">まだ原因が記録されていません。設問ごとに原因をタップしましょう。</p>` : `
+        <div class="stack">${CAUSES.map((c, i) => `<div style="width:${(counts[c.id] / total) * 100}%;background:var(--primary);opacity:${OPACITIES[i]}"></div>`).join("")}</div>
+        <ul class="cause-list">${CAUSES.map((c, i) => `<li><span><span class="sw" style="opacity:${OPACITIES[i]}"></span>${c.label}</span><span class="muted">${Math.round((counts[c.id] / total) * 100)}%</span></li>`).join("")}</ul>`}
+    </section>`;
+  } else {
+    const now = Date.now();
+    right = `<section class="bcard"><div class="m12 b" style="margin-bottom:12px">更新ログ</div>
+      ${S.log.length === 0 ? `<p class="m13" style="margin:0">まだ記録がありません。</p>` :
+        `<ul class="log">${S.log.slice(0, 3).map((l) => `<li><span class="t">${esc(l.text)}</span><span class="a">${relTime(l.at, now)}</span></li>`).join("")}</ul>`}
+    </section>`;
+  }
+  return `<div class="bottom">${ring}${right}</div>`;
+}
+
+const app = document.getElementById("app");
+function render() {
+  const D = derive();
+  const main = S.view.kind === "list" || !D.selected ? problemList(D) : problemDetail(D);
+  app.innerHTML = `<div class="app">${header()}
+    <div class="body">
+      <aside class="side">${sidebar(D)}</aside>
+      <main>${topbar(D)}${main}<div id="bottom">${bottom(D)}</div></main>
+    </div>
+    ${ui.sheet ? `<div class="overlay" data-act="sheet-close"></div><div class="sheet"><button class="sheet-x" data-act="sheet-close" aria-label="閉じる">${I.x}</button>${sidebar(D)}</div>` : ""}
+  </div>`;
+  if (ui.editingGoal) {
+    const i = document.getElementById("goal-in");
+    if (i) i.focus();
+  }
+}
+
+/* ---------- toast ---------- */
+function toast(msg, kind = "ok") {
+  const el = document.createElement("div");
+  el.className = `toast ${kind === "err" ? "err" : ""}`;
+  el.innerHTML = `${kind === "plain" ? "" : `<span class="ic">${kind === "err" ? I.alert : I.check}</span>`}<span>${esc(msg)}</span>`;
+  document.getElementById("toasts").appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+/* ---------- problem dialog ---------- */
+const dlgP = document.getElementById("dlg-problem");
+const unitOpts = (subject, cur) => UNITS.filter((x) => x.subject === subject)
+  .map((x) => `<option value="${esc(x.id)}" ${x.id === cur ? "selected" : ""}>${esc(x.group)} / ${esc(x.name)}</option>`).join("");
+
+function blankProblem(defaultUnitId) {
+  return {
+    id: newId(), subject: S.subject,
+    unitId: defaultUnitId ?? UNITS.find((x) => x.subject === S.subject).id,
+    year: 2024, exam: "二次", school: "", part: "第1問", label: "", difficulty: 3,
+    principles: [], insight: "", refs: [], step1: false, step2: false, updatedAt: 0,
+  };
+}
+
+function openProblemDialog(editing) {
+  const D = derive();
+  ui.editing = editing ?? null;
+  const f = editing ? JSON.parse(JSON.stringify(editing)) : blankProblem(D.activeUnitId);
+  ui.form = f;
+  dlgP.innerHTML = `<form onsubmit="return false">
+    <button type="button" class="dlg-x" data-d="cancel" aria-label="閉じる">${I.x}</button>
+    <h2 class="dlg-title">${editing ? "過去問を編集" : "過去問を追加"}</h2>
+    <p class="dlg-desc">解法の型と参考書のページを紐付けると、類題テストと逆引きに使われます。</p>
+    <div class="fgrid">
+      <label class="field">科目<select class="inp" name="subject">${[["math", "数学"], ["physics", "物理"], ["english", "英語"]].map(([v, l]) =>
+        `<option value="${v}" ${f.subject === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+      <label class="field">単元・設問タイプ<select class="inp" name="unitId">${unitOpts(f.subject, f.unitId)}</select></label>
+      <label class="field">年度<input class="inp" type="number" inputmode="numeric" name="year" value="${esc(f.year)}"></label>
+      <label class="field">試験区分<select class="inp" name="exam">${EXAMS.map((x) => `<option ${f.exam === x ? "selected" : ""}>${x}</option>`).join("")}</select></label>
+      <label class="field">大学・試験名<input class="inp" name="school" placeholder="東京大 理科" value="${esc(f.school)}"></label>
+      <label class="field">大問<input class="inp" name="part" placeholder="第1問" value="${esc(f.part)}"></label>
+      <label class="field">分野ラベル<input class="inp" name="label" placeholder="数III 微積分" value="${esc(f.label)}"></label>
+      <label class="field">難易度<select class="inp" name="difficulty">${[1, 2, 3, 4, 5].map((x) =>
+        `<option value="${x}" ${f.difficulty === x ? "selected" : ""}>${"★".repeat(x)}</option>`).join("")}</select></label>
+    </div>
+    <div class="fstack">
+      <label class="field">抽象原理・解法の型（1行に1つ）<textarea class="inp" rows="3" name="principles" placeholder="対称性の確認&#10;変数分離">${esc(f.principles.join("\n"))}</textarea></label>
+      <label class="field">何が分かれば解けるか<textarea class="inp" rows="3" name="insight" placeholder="この問題を解けるようになるための考え方を、問題固有の数値を使わずに書く">${esc(f.insight)}</textarea></label>
+      <label class="field">参考書逆引き（書名 | ページ、1行に1つ）<textarea class="inp" rows="2" name="refs" placeholder="一対一対応の演習 数III | p.88 例題4">${esc(f.refs.map((r) => `${r.book} | ${r.page}`).join("\n"))}</textarea></label>
+    </div>
+    <div class="dlg-actions">
+      ${editing ? `<button type="button" class="btn ghost danger" data-d="delete">削除</button>` : "<span></span>"}
+      <div class="row-btns">
+        <button type="button" class="btn ghost" data-d="cancel">キャンセル</button>
+        <button type="button" class="btn pri" data-d="save">保存</button>
+      </div>
+    </div>
+  </form>`;
+  dlgP.showModal();
+  dlgP.scrollTop = 0;
+  updateValid();
+}
+
+function formEl(name) { return dlgP.querySelector(`[name="${name}"]`); }
+function updateValid() {
+  const ok = formEl("school").value.trim() && formEl("part").value.trim() && Number(formEl("year").value) > 1980;
+  dlgP.querySelector('[data-d="save"]').disabled = !ok;
+}
+
+function saveProblem() {
+  const g = (n) => formEl(n).value;
+  const unitId = g("unitId");
+  const unit = UNITS.find((x) => x.id === unitId);
+  const isListening = unit?.track === "listening";
+  const editing = ui.editing;
+  const p = {
+    ...ui.form,
+    subject: g("subject"), unitId,
+    year: Number(g("year")), exam: g("exam"), school: g("school"), part: g("part"),
+    label: g("label").trim() || unit?.name || "",
+    difficulty: Number(g("difficulty")),
+    principles: g("principles").split(/\n|、|,/).map((x) => x.trim()).filter(Boolean),
+    insight: g("insight"),
+    refs: g("refs").split("\n").map((l) => l.split("|").map((x) => x.trim())).filter((x) => x[0])
+      .map(([book, page]) => ({ book, page: page ?? "" })),
+  };
+  if (isListening) p.listening = ui.form.listening ?? { causes: [], script: "", heard: "" };
+  else delete p.listening;
+  dlgP.close();
+  resetFilters();
+  upsert(p, `${problemTitle(p)} — ${editing ? "更新" : "追加"}`);
+  toast(editing ? "過去問を更新しました" : "過去問を追加しました");
+}
+
+dlgP.addEventListener("input", (e) => {
+  if (e.target.name === "subject") {
+    const sel = formEl("unitId");
+    sel.innerHTML = unitOpts(e.target.value, null);
+    sel.selectedIndex = 0;
+  }
+  updateValid();
+});
+dlgP.addEventListener("click", (e) => {
+  const a = e.target.closest("[data-d]")?.dataset.d;
+  if (a === "cancel") dlgP.close();
+  else if (a === "save") saveProblem();
+  else if (a === "delete") {
+    if (!confirm("この過去問を削除しますか？")) return;
+    const id = ui.editing.id;
+    dlgP.close();
+    removeProblem(id);
+  }
+});
+
+/* ---------- similar dialog ---------- */
+const dlgS = document.getElementById("dlg-similar");
+function renderSimilar() {
+  const p = S.problems.find((x) => x.id === ui.simP);
+  if (!p) { dlgS.close(); return; }
+  const cands = similarFor(p, S.problems);
+  const c = cands[ui.simIdx];
+  const shared = c ? c.principles.filter((t) => p.principles.includes(t)) : [];
+  dlgS.innerHTML = `<button type="button" class="dlg-x" data-d="cancel" aria-label="閉じる">${I.x}</button>
+    <h2 class="dlg-title">類題テスト</h2>
+    <p class="dlg-desc">同じ抽象原理を持つ別の問題に、初見で適用できるか確かめます。</p>
+    ${!c ? `<div class="empty-s">
+        <p style="font-size:14px;font-weight:500">同じ原理タグを持つ類題がまだありません</p>
+        <p class="m12" style="margin-top:4px">別の過去問に「${esc(p.principles[0] ?? "解法の型")}」を付けて追加しましょう。</p>
+      </div>` : `<div class="card" style="padding:20px">
+        <div class="m11">${ui.simIdx + 1} / ${cands.length}</div>
+        <div style="margin-top:4px;font-size:17px;font-weight:600">${esc(problemTitle(c))}</div>
+        <div class="m13">${esc(c.label)}</div>
+        <div style="margin-top:16px;font-size:11px;font-weight:600;color:var(--primary-strong)">共通する原理</div>
+        <div class="tags">${shared.map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</div>
+      </div>`}
+    <div class="sim-actions">
+      ${cands.length > 1 ? `<button class="btn ghost" data-d="next">別の類題</button>` : ""}
+      ${c ? `<button class="btn ghost" data-d="fail">解けなかった</button><button class="btn pri" data-d="pass">初見で解けた</button>` : ""}
+    </div>`;
+}
+dlgS.addEventListener("click", (e) => {
+  const a = e.target.closest("[data-d]")?.dataset.d;
+  const p = S.problems.find((x) => x.id === ui.simP);
+  if (a === "cancel") dlgS.close();
+  else if (a === "next") {
+    const n = similarFor(p, S.problems).length;
+    ui.simIdx = (ui.simIdx + 1) % n;
+    renderSimilar();
+  } else if (a === "fail") {
+    dlgS.close();
+    patchProblem(p.id, {}, `${problemTitle(p)} — 類題テスト未達（要復習）`);
+    toast("原理の言語化をもう一度見直しましょう", "plain");
+  } else if (a === "pass") {
+    dlgS.close();
+    patchProblem(p.id, { step2: true }, `${problemTitle(p)} — 類題テストクリア`);
+    toast("2段階再現クリア");
+  }
+});
+
+function closeOnBackdrop(d) {
+  d.addEventListener("click", (e) => {
+    if (e.target !== d) return;
+    const r = d.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) d.close();
+  });
+}
+closeOnBackdrop(dlgP);
+closeOnBackdrop(dlgS);
+
+/* ---------- backup ---------- */
+function exportData() {
+  const blob = new Blob([JSON.stringify(S, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `study-compass-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast("データを書き出しました");
+}
+const imp = document.getElementById("imp");
+imp.addEventListener("change", async () => {
+  const file = imp.files?.[0];
+  imp.value = "";
+  if (!file) return;
+  try {
+    const o = JSON.parse(await file.text());
+    if (!o || !Array.isArray(o.problems)) throw new Error("bad");
+    if (!confirm("今のデータを、このファイルの内容で置きかえますか？")) return;
+    delete o.view;
+    S = { ...initial(), ...o, view: { kind: "detail" } };
+    ui.groupKey = null;
+    resetFilters();
+    commit();
+    toast("データを読み込みました");
+  } catch (e) {
+    toast("このファイルは読み込めませんでした", "err");
+  }
+});
+
+/* ---------- events ---------- */
+app.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-act]");
+  if (!t) {
+    if (ui.openMenu && !e.target.closest(".menu")) { ui.openMenu = null; render(); }
+    return;
+  }
+  const act = t.dataset.act;
+  const id = t.dataset.id;
+  if (act !== "menu") ui.openMenu = null;
+  const D = derive();
+  switch (act) {
+    case "menu": ui.openMenu = ui.openMenu === t.dataset.menu ? null : t.dataset.menu; render(); break;
+    case "sheet-open": ui.sheet = true; render(); break;
+    case "sheet-close": ui.sheet = false; render(); break;
+    case "goal-edit": ui.editingGoal = true; render(); break;
+    case "subject": S.subject = id; S.view = { kind: "detail" }; commit(); break;
+    case "theme": S.theme = id; commit(); break;
+    case "export": render(); exportData(); break;
+    case "import": render(); imp.click(); break;
+    case "group": ui.group = t.dataset.g; render(); break;
+    case "unit": S.view = { kind: "list", unitId: id }; ui.sheet = false; resetFilters(); commit(); break;
+    case "to-detail": S.view = { kind: "detail" }; commit(); break;
+    case "to-list": S.view = { kind: "list" }; resetFilters(); commit(); break;
+    case "show-all": S.view = { kind: "list" }; resetFilters(); commit(); break;
+    case "add": render(); openProblemDialog(null); break;
+    case "edit": render(); openProblemDialog(D.selected); break;
+    case "select": ui.sheet = false; selectProblem(id); break;
+    case "step1": {
+      const p = D.selected;
+      patchProblem(p.id, p.step1 ? { step1: false, step2: false } : { step1: true }, `${problemTitle(p)} — 再現チェック更新`);
+      break;
+    }
+    case "similar": render(); ui.simP = D.selected.id; ui.simIdx = 0; renderSimilar(); dlgS.showModal(); break;
+    case "cause": {
+      const p = D.selected;
+      const cs = p.listening?.causes ?? [];
+      patchListening(p.id, { causes: cs.includes(id) ? cs.filter((x) => x !== id) : [...cs, id] }, true);
+      break;
+    }
+  }
+});
+
+app.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.dataset.lp) {
+    const p = derive().selected;
+    patchListening(p.id, { [t.dataset.lp]: t.value }, false);
+    const fresh = S.problems.find((x) => x.id === p.id);
+    const box = document.getElementById("lp-diff");
+    if (box) box.innerHTML = diffHtml(fresh.listening);
+  } else if (t.dataset.f) {
+    ui.f[t.dataset.f] = t.value;
+    const box = document.getElementById("pl-table");
+    if (box) box.innerHTML = tableHtml(derive().listUnit);
+  }
+});
+
+app.addEventListener("focusout", (e) => {
+  if (e.target.id !== "goal-in") return;
+  const v = e.target.value.trim();
+  if (v) S.goal = v;
+  ui.editingGoal = false;
+  commit();
+});
+app.addEventListener("keydown", (e) => {
+  if (e.target.id === "goal-in" && e.key === "Enter") e.target.blur();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && (ui.sheet || ui.openMenu)) { ui.sheet = false; ui.openMenu = null; render(); }
+});
+
+setInterval(() => {
+  const b = document.getElementById("bottom");
+  if (b && !document.activeElement?.closest?.("#bottom")) b.innerHTML = bottom(derive());
+}, 30000);
+
+save();
+render();
+</script>
+</body>
+</html>
