@@ -102,6 +102,9 @@ main { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 24px; 
 .src { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 6px 0 0; font-size: 13px; }
 .src dt { color: var(--muted-foreground); }
 .src dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.pdf-link { color: var(--primary-strong); text-decoration: underline; text-underline-offset: 2px; text-align: left; overflow-wrap: anywhere; }
+.pdf-link.missing { color: inherit; text-decoration: none; }
+.src-hint { margin: 8px 0 0; font-size: 11px; color: var(--muted-foreground); }
 .pick { list-style: none; margin: 0; padding: 0; font-size: 13px; }
 .pick li + li { border-top: 1px solid var(--border); }
 .pick button { display: flex; width: 100%; gap: 10px; align-items: flex-start; padding: 10px 0; text-align: left; }
@@ -310,6 +313,7 @@ textarea.inp { height: auto; padding: 8px; resize: vertical; }
 <dialog id="dlg-today"></dialog>
 <dialog id="dlg-random"></dialog>
 <input type="file" id="imp" accept="application/json,.json" hidden>
+<input type="file" id="imp-pdf" accept="application/pdf,.pdf" multiple hidden>
 <script>
 "use strict";
 
@@ -565,6 +569,7 @@ function header() {
         ${ui.openMenu === "backup" ? `<div class="menu right" style="min-width:200px">
           <button data-act="export"><span>データを書き出す</span></button>
           <button data-act="import"><span>データを読み込む</span></button>
+          <button data-act="import-pdf"><span>PDFを取り込む</span><span class="muted">${pdfNames.size ? `${pdfNames.size}件` : ""}</span></button>
         </div>` : ""}
       </div>
     </div>
@@ -1211,13 +1216,87 @@ function cleanSrc(o) {
   for (const k of ["print", "q", "a", "theme"]) if (o[k]) r[k] = String(o[k]).slice(0, 300);
   return Object.keys(r).length ? r : null;
 }
+// File names in the text become buttons that open the PDF the user imported into this browser.
+function pdfLinks(text) {
+  return esc(text).replace(/([^\s、]+?\.pdf)((?:\s*p\.(\d+))?)/g, (m, name, rest, page) => {
+    const has = pdfNames.has(pdfKey(name));
+    return `<button class="pdf-link ${has ? "" : "missing"}" data-act="pdf" data-file="${name}" data-page="${page ?? ""}">${name}</button>${rest}`;
+  });
+}
 function srcCard(p) {
   const s = p.src;
   if (!s) return "";
-  const row = (k, v) => (v ? `<dt>${k}</dt><dd>${esc(v)}</dd>` : "");
+  const row = (k, v) => (v ? `<dt>${k}</dt><dd>${pdfLinks(v)}</dd>` : "");
+  const ansPrint = s.print ? s.print.replace(/_問題\.pdf.*$/, "_解答.pdf") : "";
   return `<section class="card src-card"><div class="card-label">問題と解答の場所</div><dl class="src">
-    ${row("プリント", s.print)}${row("問題", s.q)}${row("解答", s.a)}${row("解法", s.theme)}</dl></section>`;
+    ${row("プリント", s.print)}${ansPrint ? row("プリント解答", ansPrint) : ""}${row("問題", s.q)}${row("解答", s.a)}<dt>解法</dt><dd>${esc(s.theme ?? "")}</dd></dl>
+    ${pdfNames.size ? "" : `<p class="src-hint">「バックアップ → PDFを取り込む」でPDFを入れると、ファイル名を押して開けます（PDFはこの端末の中だけに保存）</p>`}</section>`;
 }
+
+/* ---------- PDFs kept only in this browser (IndexedDB), never uploaded ---------- */
+let pdfNames = new Set();
+// iOS can hand over decomposed (NFD) names or add " 2" to a re-downloaded copy; keys use one form.
+const pdfKey = (n) => String(n).normalize("NFC").replace(/ \d+(\.pdf)$/i, "$1");
+function pdfDb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("study-compass-pdf", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("files");
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function pdfTx(mode, fn) {
+  const db = await pdfDb();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("files", mode);
+    const out = fn(tx.objectStore("files"));
+    tx.oncomplete = () => res(out?.result ?? out);
+    tx.onerror = () => rej(tx.error);
+    tx.onabort = () => rej(tx.error);
+  });
+}
+async function loadPdfNames() {
+  try {
+    const keys = await pdfTx("readonly", (st) => st.getAllKeys());
+    pdfNames = new Set(keys.map(String));
+    render();
+  } catch (e) { /* IndexedDB unavailable: links stay as plain text */ }
+}
+const impPdf = document.getElementById("imp-pdf");
+impPdf.addEventListener("change", async () => {
+  const files = [...(impPdf.files ?? [])].filter((x) => /\.pdf$/i.test(x.name));
+  impPdf.value = "";
+  if (!files.length) return;
+  let ok = 0;
+  try {
+    for (const file of files) {
+      await pdfTx("readwrite", (st) => st.put(file, pdfKey(file.name)));
+      pdfNames.add(pdfKey(file.name));
+      ok++;
+    }
+    toast(`PDFを${ok}件取り込みました`);
+  } catch (e) {
+    toast(ok ? `${ok}件で止まりました（端末の空きが足りないかも）` : "PDFを取り込めませんでした", "err");
+  }
+  render();
+});
+async function openPdf(name, page) {
+  name = pdfKey(name);
+  if (!pdfNames.has(name)) {
+    toast(`${name} はまだ取り込まれていません（バックアップ → PDFを取り込む）`, "err");
+    return;
+  }
+  const w = window.open("", "_blank");
+  try {
+    const blob = await pdfTx("readonly", (st) => st.get(name));
+    const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" })) + (page ? `#page=${page}` : "");
+    if (w) w.location.href = url; else location.href = url;
+  } catch (e) {
+    if (w) w.close();
+    toast("PDFを開けませんでした", "err");
+  }
+}
+loadPdfNames();
 
 /* ---------- 今日の問題 / ランダム演習 ---------- */
 const dayKey = (t = Date.now()) => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
@@ -1359,6 +1438,8 @@ app.addEventListener("click", (e) => {
     case "theme": S.theme = id; commit(); break;
     case "export": render(); exportData(); break;
     case "import": render(); imp.click(); break;
+    case "import-pdf": render(); impPdf.click(); break;
+    case "pdf": openPdf(t.dataset.file, t.dataset.page); break;
     case "group": ui.group = t.dataset.g; render(); break;
     case "unit": S.view = { kind: "list", unitId: id }; ui.sheet = false; resetFilters(); commit(); break;
     case "to-detail": S.view = { kind: "detail" }; commit(); break;
