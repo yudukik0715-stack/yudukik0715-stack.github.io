@@ -298,151 +298,6 @@ const UNITS = [
   ], "listening"),
 ];
 
-const uid = (subject, group, name) => `${subject}:${group}:${name}`;
-
-let seedN = 0;
-function mk(p, exam = "二次") {
-  seedN++;
-  return { id: `seed-${seedN}`, exam, difficulty: 3, insight: "", refs: [], step1: false, step2: false, updatedAt: 0, ...p };
-}
-
-function series(unit, count, full, half, pool, label, insight, refs) {
-  const sources = [
-    [2024, "二次", "京都大 理系", "第3問"],
-    [2022, "二次", "東京大 理科", "第4問"],
-    [2021, "二次", "東京工業大", "第2問"],
-    [2020, "二次", "大阪大 理系", "第5問"],
-    [2019, "二次", "東北大 理系", "第4問"],
-    [2018, "二次", "名古屋大 理系", "第2問"],
-    [2017, "二次", "九州大 理系", "第3問"],
-    [2016, "二次", "北海道大 理系", "第5問"],
-    [2015, "二次", "東京大 理科", "第3問"],
-    [2014, "二次", "京都大 理系", "第6問"],
-  ];
-  return Array.from({ length: count }, (_, i) => {
-    const s = sources[i % sources.length];
-    return mk({
-      subject: "math",
-      unitId: uid("math", "数III 微分・積分", unit),
-      year: s[0], school: s[2], part: s[3], label,
-      difficulty: 3 + (i % 3),
-      principles: pool[i % pool.length],
-      insight, refs,
-      step1: i < full + half,
-      step2: i < full,
-    }, s[1]);
-  });
-}
-
-function buildSeed() {
-  seedN = 0;
-  const featured = mk({
-    id: "todai-2023-1",
-    subject: "math",
-    unitId: uid("math", "数III 微分・積分", "定積分の応用・面積体積"),
-    year: 2023, school: "東京大 理科", part: "第1問", label: "数III 微積分", difficulty: 4,
-    principles: ["対称性の確認", "変数分離", "積分区間の置換パターン"],
-    insight: "被積分関数の形を見る前に「区間と関数に対称性があるか」を確かめる。対称性で積分を半分に畳み、残りは置換で区間を標準形に揃えると計算が一本道になる。解けない時は、置換の“前後で区間がどう変わるか”を自分で書けるかを確認する。",
-    refs: [{ book: "一対一対応の演習 数III", page: "p.88 例題4" }],
-    step1: true, step2: false,
-  });
-
-  const math = [
-    ...series("微分・積分の計算", 10, 9, 1, [["置換積分の型判定"], ["部分積分の反復"], ["対数微分法"]], "数III 微積分",
-      "被積分関数を「合成関数×中身の微分」に分解できるかを先に判定する。", [{ book: "青チャート 数III", page: "p.212 例題130" }]),
-    ...series("極限と関数の連続性", 5, 4, 0, [["はさみうちの原理"], ["区分求積法"]], "数III 極限",
-      "評価式を作れるか＝上下から挟む2つの式を自分で用意できるかが鍵。", [{ book: "一対一対応の演習 数III", page: "p.24 例題6" }]),
-    ...series("微分の応用・最大最小", 5, 2, 2, [["文字定数分離"], ["増減表の作成"], ["対称性の確認", "増減表の作成"]], "数III 微分",
-      "文字定数を片側に分離し、グラフと直線の交点問題に読み替える。", [{ book: "一対一対応の演習 数III", page: "p.56 例題3" }]),
-    featured,
-    ...series("定積分の応用・面積体積", 9, 3, 2, [["回転体の体積・断面"], ["対称性の確認", "回転体の体積・断面"], ["積分区間の置換パターン"]], "数III 積分",
-      "立体は「どの軸に垂直な断面で切るか」を決めた瞬間に解ける問題になる。", [{ book: "一対一対応の演習 数III", page: "p.92 例題6" }]),
-  ];
-
-  const mathOthers = [
-    ["数I", "二次関数", ["軸の位置で場合分け"], 2023, "共テ本試", "共通テスト IA", "第2問", true],
-    ["数I", "図形と計量", ["余弦定理で辺を確定"], 2022, "共テ本試", "共通テスト IA", "第1問", true],
-    ["数I", "データの分析", ["分散の定義式変形"], 2024, "共テ本試", "共通テスト IA", "第2問", false],
-    ["数I", "数と式", ["対称式は基本対称式で表す"], 2021, "共テ追試", "共通テスト IA", "第1問", true],
-    ["数A", "確率", ["余事象で数える"], 2023, "二次", "東京大 理科", "第2問", true],
-    ["数A", "整数の性質", ["余りで分類する"], 2022, "二次", "京都大 理系", "第4問", true],
-    ["数A", "場合の数", ["区別の有無を先に決める"], 2024, "共テ本試", "共通テスト IA", "第3問", false],
-    ["数II", "三角関数", ["合成で1つの三角関数に"], 2023, "共テ本試", "共通テスト IIB", "第1問", true],
-    ["数II", "指数・対数関数", ["底をそろえて置換"], 2022, "共テ本試", "共通テスト IIB", "第1問", true],
-    ["数II", "微分法(II)", ["文字定数分離"], 2021, "共テ本試", "共通テスト IIB", "第2問", true],
-    ["数II", "図形と方程式", ["軌跡はパラメータ消去"], 2020, "二次", "大阪大 理系", "第1問", false],
-    ["数B", "数列", ["漸化式の型判定"], 2023, "二次", "東京大 理科", "第3問", true],
-    ["数C", "ベクトル", ["始点をそろえて1次独立で係数比較"], 2024, "二次", "京都大 理系", "第2問", true],
-    ["数C", "複素数平面", ["回転と拡大を極形式で"], 2022, "二次", "東京工業大", "第3問", true],
-  ];
-  const math2 = mathOthers.map(([g, name, principles, year, exam, school, part, both]) =>
-    mk({ subject: "math", unitId: uid("math", g, name), year, school, part, label: `${g} ${name}`, principles, insight: "", step1: true, step2: both }, exam));
-
-  const phys = [
-    ["力学", "運動量と力積", ["運動量保存は系と外力を先に決める"], 2023, "二次", "東京大", "第1問", true, false, "物体系を決め、その系に働く外力の力積がゼロかを最初に判定する。"],
-    ["力学", "円運動・単振動", ["つりあいの位置を原点に取る"], 2022, "二次", "京都大", "第1問", true, true, "つりあいの位置からのずれで運動方程式を書けば、単振動の形が自動的に現れる。"],
-    ["力学", "運動方程式", ["力の図示→軸ごとの運動方程式"], 2024, "共テ本試", "共通テスト 物理", "第1問", true, true, ""],
-    ["電磁気", "電磁誘導", ["磁束の変化から起電力の向き"], 2023, "共テ本試", "共通テスト 物理", "第3問", false, false, "磁束Φの時間変化を式で書き、レンツの法則で向きを先に決める。"],
-    ["電磁気", "コンデンサー", ["孤立部分の電荷保存"], 2022, "二次", "東京工業大", "第2問", true, false, ""],
-    ["電磁気", "交流", ["位相のずれをベクトル図で"], 2021, "二次", "大阪大", "第3問", false, false, ""],
-    ["波動", "光の干渉", ["光路差＝経路差×屈折率"], 2023, "二次", "東京大", "第3問", true, false, "2つの経路の光路差を書き出し、反射での位相反転の有無を必ずチェックする。"],
-    ["波動", "音波・ドップラー", ["観測者・音源の速度を分けて考える"], 2024, "共テ本試", "共通テスト 物理", "第2問", true, true, ""],
-    ["熱", "熱力学第一法則", ["ΔU=Q-W の符号規約を固定"], 2022, "共テ本試", "共通テスト 物理", "第4問", true, false, ""],
-    ["熱", "気体分子運動論", ["1分子の運動量変化→圧力"], 2020, "二次", "名古屋大", "第3問", false, false, ""],
-    ["原子", "光電効果・粒子性", ["エネルギー保存 hν=W+K"], 2023, "共テ追試", "共通テスト 物理", "第4問", true, true, ""],
-  ];
-  const physics = phys.map(([g, name, principles, year, exam, school, part, s1, s2, insight]) =>
-    mk({ subject: "physics", unitId: uid("physics", g, name), year, school, part, label: `${g} ${name}`, principles, insight,
-      refs: [{ book: "名問の森 物理", page: "p.40 問題12" }], step1: s1, step2: s2 }, exam));
-
-  const L = "共テ リスニング";
-  const english = [
-    mk({
-      subject: "english", unitId: uid("english", L, "第5問 講義・ワークシート"), year: 2023, school: "共通テスト リスニング", part: "第5問",
-      label: "講義・ワークシート", difficulty: 4, principles: ["ワークシートの空欄を先読みして待ち構える"],
-      insight: "音声が流れる前にワークシートの空欄の品詞と数値の単位を予想しておく。聞くのは“答えの形”だけ。",
-      refs: [{ book: "英語の発音・ルール講義", page: "p.34 弱形" }], step1: true,
-      listening: {
-        causes: ["preread", "speed"],
-        script: "In the past, most people worked in agriculture, but now only a small percentage of workers are farmers.",
-        heard: "In the past most people worked in agriculture but now only small percentage are farmers.",
-      },
-    }, "共テ本試"),
-    mk({
-      subject: "english", unitId: uid("english", L, "第3問 対話・応答"), year: 2022, school: "共通テスト リスニング", part: "第3問",
-      label: "対話・応答", principles: ["話者の意図は最後の発話で決まる"], insight: "", step1: true, step2: true,
-      listening: { causes: ["sound"], script: "I'd rather not go out tonight.", heard: "I rather not go out tonight." },
-    }, "共テ本試"),
-    mk({
-      subject: "english", unitId: uid("english", L, "第1問B 短文・イラスト選択"), year: 2024, school: "共通テスト リスニング", part: "第1問B",
-      label: "短文・イラスト選択", principles: ["イラストの差分を先に言語化"], insight: "", step1: false,
-      listening: { causes: ["sound", "vocab"], script: "", heard: "" },
-    }, "共テ本試"),
-    mk({
-      subject: "english", unitId: uid("english", L, "第4問A 図表完成"), year: 2021, school: "共通テスト リスニング", part: "第4問A",
-      label: "図表完成", principles: ["ワークシートの空欄を先読みして待ち構える"], insight: "", step1: true,
-      listening: { causes: ["preread"], script: "", heard: "" },
-    }, "共テ追試"),
-    mk({
-      subject: "english", unitId: uid("english", "共テ リーディング", "第6問 論説・説明文"), year: 2023, school: "共通テスト リーディング", part: "第6問",
-      label: "論説文", principles: ["段落ごとの主張を一文で要約"], insight: "設問より先に各段落の役割（主張・例・反論）を一言でメモする。", step1: true,
-    }, "共テ本試"),
-    mk({
-      subject: "english", unitId: uid("english", "二次 英語", "要約"), year: 2022, school: "東京大", part: "第1問A",
-      label: "要約", principles: ["段落ごとの主張を一文で要約"], insight: "", step1: false,
-    }, "二次"),
-  ];
-  return { problems: [...math, ...math2, ...physics, ...english], featuredId: featured.id };
-}
-
-function seedLog(now) {
-  return [
-    { id: "l1", text: "東大2023 第1問 — 再現チェック更新", at: now - 2 * 60000, synced: false },
-    { id: "l2", text: "定積分の応用 — 弱点タグ追加", at: now - 18 * 60000, synced: false },
-    { id: "l3", text: "一対一対応 p.88 — 逆引きリンク作成", at: now - 60 * 60000, synced: false },
-  ];
-}
-
 /* ---------- logic ---------- */
 const problemScore = (p) => (p.step1 ? 0.5 : 0) + (p.step1 && p.step2 ? 0.5 : 0);
 function unitMastery(problems, unitId) {
@@ -521,17 +376,18 @@ const I = {
 /* ---------- state ---------- */
 const KEY = "study-compass:v1";
 function initial() {
-  const seed = buildSeed();
   return {
     goal: "東大理系 / 共通テスト88%",
     theme: "slate",
     subject: "math",
-    selected: { math: seed.featuredId, physics: undefined, english: undefined },
+    selected: { math: undefined, physics: undefined, english: undefined },
     view: { kind: "detail" },
-    problems: seed.problems,
-    log: seedLog(Date.now()),
+    problems: [],
+    log: [],
   };
 }
+// Sample problems from the first version: removed so the stock starts empty.
+const isSample = (p) => /^seed-\d+$/.test(p.id) || p.id === "todai-2023-1";
 let S = initial();
 try {
   const raw = localStorage.getItem(KEY);
@@ -541,6 +397,9 @@ try {
     S = { ...S, ...saved };
   }
 } catch (e) { /* corrupted storage: keep defaults */ }
+S.problems = (S.problems ?? []).filter((p) => !isSample(p));
+S.log = (S.log ?? []).filter((l) => !["l1", "l2", "l3"].includes(l.id));
+S.selected = Object.fromEntries(Object.entries(S.selected ?? {}).map(([k, v]) => [k, S.problems.some((p) => p.id === v) ? v : undefined]));
 
 const ui = {
   group: null, groupKey: null, openMenu: null, editingGoal: false, sheet: false,
