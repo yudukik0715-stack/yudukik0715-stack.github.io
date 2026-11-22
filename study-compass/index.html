@@ -1032,7 +1032,7 @@ imp.addEventListener("change", async () => {
   imp.value = "";
   if (!file) return;
   try {
-    const o = JSON.parse(await file.text());
+    const o = parseJsonLoose(await file.text());
     if (!o || !Array.isArray(o.problems)) throw new Error("bad");
     if (o.mode === "add") { addProblems(o.problems); return; }
     if (!confirm("今のデータを、このファイルの内容で置きかえますか？")) return;
@@ -1046,6 +1046,33 @@ imp.addEventListener("change", async () => {
     toast("このファイルは読み込めませんでした", "err");
   }
 });
+
+// Tolerate a BOM or text wrapped around the JSON (some share sheets add it).
+function parseJsonLoose(t) {
+  t = String(t).replace(/^\uFEFF/, "");
+  try { return JSON.parse(t); } catch (e) {
+    const i = t.indexOf("{"), j = t.lastIndexOf("}");
+    if (i < 0 || j <= i) throw e;
+    return JSON.parse(t.slice(i, j + 1));
+  }
+}
+// Link form: .../study-compass/#add=<name> adds data/<name>.json without picking a file.
+async function addFromLink() {
+  const m = location.hash.match(/^#add=([\w-]+)$/);
+  if (!m) return;
+  history.replaceState(null, "", location.pathname + location.search);
+  try {
+    const r = await fetch(`data/${m[1]}.json`, { cache: "no-store" });
+    if (!r.ok) throw new Error(String(r.status));
+    const o = parseJsonLoose(await r.text());
+    if (!o || !Array.isArray(o.problems)) throw new Error("bad");
+    addProblems(o.problems);
+  } catch (e) {
+    toast("過去問のデータを読み込めませんでした", "err");
+  }
+}
+setTimeout(addFromLink, 300);
+window.addEventListener("hashchange", addFromLink);
 
 // "add" files only append problems that are not in the stock yet; nothing already saved is changed.
 function addProblems(list) {
