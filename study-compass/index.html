@@ -251,6 +251,24 @@ textarea.inp { height: auto; padding: 8px; resize: vertical; }
 .empty-s { padding: 24px 0; text-align: center; }
 .empty-s p { margin: 0; }
 
+/* review & check-in */
+.rv-btns { display: flex; justify-content: flex-end; gap: 8px; padding: 4px 0 8px; }
+.rv-btns .btn { height: 32px; padding: 0 12px; font-size: 12px; }
+.notice { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); background: color-mix(in srgb, var(--primary) 5%, transparent); padding: 16px 20px; }
+.notice.col { display: block; }
+.notice-t { font-size: 14px; font-weight: 600; color: var(--primary-strong); }
+.due { list-style: none; margin: 8px 0 0; padding: 0; font-size: 13px; }
+.due li + li { border-top: 1px solid color-mix(in srgb, var(--primary) 15%, transparent); }
+.due button { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; padding: 8px 0; text-align: left; }
+.due button:hover { color: var(--primary-strong); }
+.due-sub { display: inline-block; margin-right: 8px; border-radius: 999px; border: 1px solid var(--border); background: var(--background); padding: 1px 8px; font-size: 11px; color: var(--muted-foreground); }
+.stats { margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { border-radius: 12px; border: 1px solid var(--border); padding: 12px; text-align: center; }
+.stat-n { font-size: 22px; font-weight: 600; }
+.stat-n span { font-size: 12px; font-weight: 400; color: var(--muted-foreground); margin-left: 2px; }
+.kv { margin-top: 10px; display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.kv.col { flex-direction: column; gap: 2px; }
+
 /* toast */
 #toasts { position: fixed; bottom: 16px; right: 16px; left: 16px; z-index: 100; display: grid; justify-items: end; gap: 8px; pointer-events: none; }
 .toast { pointer-events: auto; display: flex; align-items: center; gap: 8px; max-width: 360px; background: var(--background); border: 1px solid var(--border); box-shadow: 0 6px 16px rgba(15, 23, 42, .12); border-radius: 8px; padding: 12px 16px; font-size: 13px; animation: tin .2s ease-out; }
@@ -264,6 +282,7 @@ textarea.inp { height: auto; padding: 8px; resize: vertical; }
 <div id="toasts"></div>
 <dialog id="dlg-problem"></dialog>
 <dialog id="dlg-similar" class="sm"></dialog>
+<dialog id="dlg-reflect" class="sm"></dialog>
 <input type="file" id="imp" accept="application/json,.json" hidden>
 <script>
 "use strict";
@@ -345,6 +364,29 @@ function missedWords(script, heard) {
 }
 const stepTxt = (p) => (p.step1 && p.step2 ? "2/2" : p.step1 ? "1/2" : "0/2");
 
+/* review schedule: after solving on your own, check again 3 days and 14 days later */
+const DAY = 86400000;
+const REVIEW_DAYS = [3, 14];
+const dayStart = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+function nextReview(p) {
+  if (!p.step1 || !p.step1At) return null;
+  const stage = p.reviewStage ?? 0;
+  if (stage >= REVIEW_DAYS.length) return null;
+  return p.step1At + REVIEW_DAYS[stage] * DAY;
+}
+const isDue = (p, now) => { const n = nextReview(p); return n !== null && dayStart(n) <= dayStart(now); };
+const mdTxt = (t) => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()}`; };
+function reviewTxt(p, now) {
+  if (!p.step1) return { text: "—", cls: "muted" };
+  const n = nextReview(p);
+  if (n === null) return { text: "2回とも完了", cls: "ok" };
+  const stage = (p.reviewStage ?? 0) + 1;
+  if (dayStart(n) <= dayStart(now)) return { text: `今日 ${stage}回目`, cls: "warn b" };
+  return { text: `${mdTxt(n)} に${stage}回目`, cls: "muted" };
+}
+const examGroup = (e) => (e === "共テ本試" || e === "共テ追試" ? "共テ" : e);
+const SUBJECT_JA = { math: "数学", physics: "物理", english: "英語" };
+
 /* ---------- constants & helpers ---------- */
 const SUBJECTS = [
   { id: "math", label: "数学I・A・II・B・C・III" },
@@ -384,6 +426,8 @@ function initial() {
     view: { kind: "detail" },
     problems: [],
     log: [],
+    reflections: [],
+    lastReflect: Date.now(),
   };
 }
 // Sample problems from the first version: removed so the stock starts empty.
@@ -400,6 +444,10 @@ try {
 S.problems = (S.problems ?? []).filter((p) => !isSample(p));
 S.log = (S.log ?? []).filter((l) => !["l1", "l2", "l3"].includes(l.id));
 S.selected = Object.fromEntries(Object.entries(S.selected ?? {}).map(([k, v]) => [k, S.problems.some((p) => p.id === v) ? v : undefined]));
+// Problems solved before the review feature existed: start their schedule from the last update.
+S.problems = S.problems.map((p) => (p.step1 && !p.step1At ? { ...p, step1At: p.updatedAt || Date.now(), reviewStage: 0 } : p));
+S.reflections = S.reflections ?? [];
+S.lastReflect = S.lastReflect ?? Date.now();
 
 const ui = {
   group: null, groupKey: null, openMenu: null, editingGoal: false, sheet: false,
@@ -532,8 +580,93 @@ function topbar(D) {
   const left = S.view.kind === "list"
     ? (D.selected ? `<button class="link-muted" data-act="to-detail">← 問題に戻る</button>` : "")
     : `<button class="link-muted" data-act="to-list">過去問ストック</button>`;
-  return `<div class="topbar">${left}<button class="link-primary" data-act="add">＋ 追加</button></div>`;
+  return `<div class="topbar">${left}<button class="link-muted" data-act="reflect">見直し</button><button class="link-primary" data-act="add">＋ 追加</button></div>`;
 }
+
+const REFLECT_EVERY = 7;
+function notices() {
+  const now = Date.now();
+  let html = "";
+  const days = Math.floor((dayStart(now) - dayStart(S.lastReflect)) / DAY);
+  if (days >= REFLECT_EVERY) {
+    html += `<section class="notice">
+      <div><div class="notice-t">週1の見直しの日です</div>
+      <div class="m12" style="margin-top:2px">この1週間の勉強が「${esc(S.goal)}」に向いていたか確かめよう</div></div>
+      <button class="btn pri" data-act="reflect">見直す</button>
+    </section>`;
+  }
+  const due = S.problems.filter((p) => isDue(p, now)).sort((a, b) => nextReview(a) - nextReview(b));
+  if (due.length) {
+    html += `<section class="notice col">
+      <div class="notice-t">今日の復習 ${due.length}問</div>
+      <ul class="due">${due.map((p) => `<li><button data-act="select" data-id="${esc(p.id)}">
+        <span><span class="due-sub">${SUBJECT_JA[p.subject]}</span>${esc(problemTitle(p))}</span>
+        <span class="m11">${(p.reviewStage ?? 0) + 1}回目</span></button></li>`).join("")}</ul>
+    </section>`;
+  }
+  return html;
+}
+
+/* ---------- weekly check-in ---------- */
+const dlgR = document.getElementById("dlg-reflect");
+function weekStats(since) {
+  const solved = S.problems.filter((p) => p.step1 && p.step1At >= since);
+  const byExam = {};
+  const bySubject = {};
+  for (const p of solved) {
+    const g = examGroup(p.exam);
+    byExam[g] = (byExam[g] ?? 0) + 1;
+    bySubject[SUBJECT_JA[p.subject]] = (bySubject[SUBJECT_JA[p.subject]] ?? 0) + 1;
+  }
+  const sim = S.problems.filter((p) => p.step2 && p.step2At >= since).length;
+  let ok = 0, ng = 0;
+  for (const p of S.problems) for (const r of (p.reviewLog ?? [])) if (r.at >= since) r.ok ? ok++ : ng++;
+  return { solved: solved.length, byExam, bySubject, sim, ok, ng };
+}
+function openReflect() {
+  const since = S.lastReflect;
+  const st = weekStats(since);
+  const parts = (o) => Object.entries(o).map(([k, v]) => `${esc(k)} ${v}問`).join(" / ") || "—";
+  const prev = S.reflections[S.reflections.length - 1];
+  dlgR.innerHTML = `<button type="button" class="dlg-x" data-d="cancel" aria-label="閉じる">${I.x}</button>
+    <h2 class="dlg-title">見直し</h2>
+    <p class="dlg-desc">${mdTxt(since)} からの勉強をふり返って、目標とずれていないか確かめます。</p>
+    <div class="card" style="padding:16px 20px">
+      <div class="m11">今の目標</div>
+      <div style="margin-top:4px;font-size:17px;font-weight:600">${esc(S.goal)}</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-n">${st.solved}<span>問</span></div><div class="m11">自力で再現できた</div></div>
+      <div class="stat"><div class="stat-n">${st.sim}<span>問</span></div><div class="m11">類題テストクリア</div></div>
+      <div class="stat"><div class="stat-n">${st.ok}<span>/${st.ok + st.ng}</span></div><div class="m11">復習で解けた</div></div>
+    </div>
+    <div class="kv"><span class="m12">試験別</span><span>${parts(st.byExam)}</span></div>
+    <div class="kv"><span class="m12">科目別</span><span>${parts(st.bySubject)}</span></div>
+    ${prev ? `<div class="kv col"><span class="m12">前回（${mdTxt(prev.at)}）の気づき</span><span>${prev.memo ? esc(prev.memo) : "（メモなし）"}</span></div>` : ""}
+    <p style="margin:20px 0 8px;font-size:14px;font-weight:600">この期間の勉強は、目標に向かってた？</p>
+    <textarea class="inp" id="rf-memo" rows="3" placeholder="気づいたこと（なくてもOK）"></textarea>
+    <div class="sim-actions">
+      <button class="btn ghost" data-d="rewrite">目標を書きかえる</button>
+      <button class="btn pri" data-d="keep">このままでOK</button>
+    </div>`;
+  dlgR.showModal();
+}
+function finishReflect(keep) {
+  const memo = document.getElementById("rf-memo").value.trim();
+  S.reflections = [...S.reflections, { at: Date.now(), goal: S.goal, memo, keep }].slice(-100);
+  S.lastReflect = Date.now();
+  S.log = [logEntry(keep ? "見直し：目標そのまま" : "見直し：目標を書きかえる"), ...S.log].slice(0, 50);
+  dlgR.close();
+  if (!keep) ui.editingGoal = true;
+  commit();
+  if (keep) toast("見直しを記録しました");
+}
+dlgR.addEventListener("click", (e) => {
+  const a = e.target.closest("[data-d]")?.dataset.d;
+  if (a === "cancel") dlgR.close();
+  else if (a === "keep") finishReflect(true);
+  else if (a === "rewrite") finishReflect(false);
+});
 
 function problemDetail(D) {
   const p = D.selected;
@@ -557,7 +690,12 @@ function problemDetail(D) {
   </section>`;
   const card3 = `<section class="card check-card"><div class="card-label">2段階再現チェック</div>
     <button class="check-row bb" data-act="step1"><span>同一問題</span><span class="${p.step1 ? "ok" : "txt-primary"}">${p.step1 ? "済" : "自力で再現できた"}</span></button>
-    <div class="check-row"><span>類題テスト</span><span class="${p.step2 ? "ok" : "muted"}">${p.step2 ? "済" : "未実施"}</span></div>
+    <div class="check-row bb"><span>類題テスト</span><span class="${p.step2 ? "ok" : "muted"}">${p.step2 ? "済" : "未実施"}</span></div>
+    ${(() => { const r = reviewTxt(p, Date.now()); return `<div class="check-row"><span>復習</span><span class="${r.cls}">${r.text}</span></div>`; })()}
+    ${isDue(p, Date.now()) ? `<div class="rv-btns">
+      <button class="btn ghost" data-act="review-ng" data-id="${esc(p.id)}">解けなかった</button>
+      <button class="btn pri" data-act="review-ok" data-id="${esc(p.id)}">解けた</button>
+    </div>` : ""}
     <button class="btn-primary" data-act="similar" ${p.step1 ? "" : "disabled"}>類題を呼び出す</button>
     ${p.step1 ? "" : `<p class="m11" style="margin:8px 0 0">先に同一問題を自力で再現しましょう</p>`}
   </section>`;
@@ -694,7 +832,7 @@ function render() {
   app.innerHTML = `<div class="app">${header()}
     <div class="body">
       <aside class="side">${sidebar(D)}</aside>
-      <main>${topbar(D)}${main}<div id="bottom">${bottom(D)}</div></main>
+      <main>${topbar(D)}${notices()}${main}<div id="bottom">${bottom(D)}</div></main>
     </div>
     ${ui.sheet ? `<div class="overlay" data-act="sheet-close"></div><div class="sheet"><button class="sheet-x" data-act="sheet-close" aria-label="閉じる">${I.x}</button>${sidebar(D)}</div>` : ""}
   </div>`;
@@ -857,7 +995,7 @@ dlgS.addEventListener("click", (e) => {
     toast("原理の言語化をもう一度見直しましょう", "plain");
   } else if (a === "pass") {
     dlgS.close();
-    patchProblem(p.id, { step2: true }, `${problemTitle(p)} — 類題テストクリア`);
+    patchProblem(p.id, { step2: true, step2At: Date.now() }, `${problemTitle(p)} — 類題テストクリア`);
     toast("2段階再現クリア");
   }
 });
@@ -871,6 +1009,7 @@ function closeOnBackdrop(d) {
 }
 closeOnBackdrop(dlgP);
 closeOnBackdrop(dlgS);
+closeOnBackdrop(dlgR);
 
 /* ---------- backup ---------- */
 function exportData() {
@@ -934,9 +1073,27 @@ app.addEventListener("click", (e) => {
     case "select": ui.sheet = false; selectProblem(id); break;
     case "step1": {
       const p = D.selected;
-      patchProblem(p.id, p.step1 ? { step1: false, step2: false } : { step1: true }, `${problemTitle(p)} — 再現チェック更新`);
+      patchProblem(p.id, p.step1
+        ? { step1: false, step2: false, step1At: undefined, step2At: undefined, reviewStage: 0 }
+        : { step1: true, step1At: Date.now(), reviewStage: 0 }, `${problemTitle(p)} — 再現チェック更新`);
+      if (!p.step1) toast(`${mdTxt(Date.now() + REVIEW_DAYS[0] * DAY)} に1回目の復習が出ます`, "plain");
       break;
     }
+    case "review-ok": case "review-ng": {
+      const p = S.problems.find((x) => x.id === id) ?? D.selected;
+      const stage = (p.reviewStage ?? 0) + 1;
+      const reviewLog = [...(p.reviewLog ?? []), { at: Date.now(), ok: act === "review-ok" }];
+      if (act === "review-ok") {
+        patchProblem(p.id, { reviewStage: stage, reviewLog }, `${problemTitle(p)} — 復習${stage}回目クリア`);
+        toast(stage >= REVIEW_DAYS.length ? "復習2回とも完了" : `次は ${mdTxt(p.step1At + REVIEW_DAYS[stage] * DAY)} に2回目`);
+      } else {
+        patchProblem(p.id, { step1: false, step2: false, step1At: undefined, step2At: undefined, reviewStage: 0, reviewLog },
+          `${problemTitle(p)} — 復習${stage}回目で解けなかった（やり直し）`);
+        toast("もう一度自力で再現できたら、そこから復習が始まります", "plain");
+      }
+      break;
+    }
+    case "reflect": render(); openReflect(); break;
     case "similar": render(); ui.simP = D.selected.id; ui.simIdx = 0; renderSimilar(); dlgS.showModal(); break;
     case "cause": {
       const p = D.selected;
@@ -965,7 +1122,10 @@ app.addEventListener("input", (e) => {
 app.addEventListener("focusout", (e) => {
   if (e.target.id !== "goal-in") return;
   const v = e.target.value.trim();
-  if (v) S.goal = v;
+  if (v && v !== S.goal) {
+    S.log = [logEntry(`目標を変更：${S.goal} → ${v}`), ...S.log].slice(0, 50);
+    S.goal = v;
+  }
   ui.editingGoal = false;
   commit();
 });
