@@ -180,6 +180,8 @@ main { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 24px; 
 .ref + .ref { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
 .ref-book { font-size: 14px; color: var(--muted-foreground); }
 .ref-page { margin-top: 8px; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.princ-ta { width: 100%; font-size: 14px; line-height: 1.6; }
+.princ-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
 .small-pill { margin-top: 16px; display: inline-flex; border: 1px solid var(--border); background: var(--background); border-radius: 999px; padding: 4px 12px; font-size: 12px; }
 .small-pill:hover { border-color: color-mix(in srgb, var(--primary) 40%, transparent); }
 .check-card { display: flex; flex-direction: column; }
@@ -498,6 +500,10 @@ function joinSplitPrinciples(list) {
   }
   return out;
 }
+// "11/22 ヒントあり" is a note about the attempt, not a 解法 (the user asked to drop it).
+const isHintNote = (t) => /^\d{1,2}\/\d{1,2}\s*ヒント(あり|使った|使用)?$/.test(String(t).trim());
+S.problems = S.problems.map((p) => (Array.isArray(p.principles) && p.principles.some(isHintNote)
+  ? { ...p, principles: p.principles.filter((t) => !isHintNote(t)) } : p));
 S.problems = S.problems.map((p) => {
   if (!Array.isArray(p.principles) || !p.principles.some((t) => /^[A-Za-z0-9ａ-ｚＡ-Ｚ０-９]{1,2}$/.test(t))) return p;
   return { ...p, principles: joinSplitPrinciples(p.principles) };
@@ -739,10 +745,16 @@ function problemDetail(D) {
       ${ui.openMenu === "sib" ? `<div class="menu right" style="width:288px">${sib.map((x) =>
         `<button data-act="select" data-id="${esc(x.id)}"><span ${x.id === p.id ? 'style="font-weight:600"' : ""}>${esc(problemTitle(x))}</span><span class="m11">${stepTxt(x)}</span></button>`).join("")}</div>` : ""}
     </div>` : "";
+  const princEditing = ui.princEdit === p.id;
   const card1 = `<section class="card"><div class="card-label">抽象原理・解法の型</div>
-    ${p.principles.length
-      ? `<ol class="princ">${p.principles.map((t, i) => `<li><span class="num">${i + 1}</span><span>${esc(t)}</span></li>`).join("")}</ol>`
-      : `<p class="muted-p">解法の型がまだありません。編集から追加しましょう。</p>`}
+    ${princEditing
+      ? `<textarea class="inp princ-ta" id="princ-ta" rows="${Math.max(6, p.principles.length * 2 + 1)}" placeholder="1行に1つ">${esc(p.principles.join("\n"))}</textarea>
+        <p class="m11" style="margin-top:6px">1行に1つ。「、」はそのまま使えるよ</p>
+        <div class="princ-btns"><button class="btn ghost" data-act="princ-cancel">やめる</button><button class="btn pri" data-act="princ-save">保存</button></div>`
+      : `${p.principles.length
+        ? `<ol class="princ">${p.principles.map((t, i) => `<li><span class="num">${i + 1}</span><span>${esc(t)}</span></li>`).join("")}</ol>`
+        : `<p class="muted-p">解法の型がまだありません。</p>`}
+        <button class="small-pill" data-act="princ-edit">${p.principles.length ? "解法の型を直す" : "解法の型を書く"}</button>`}
     ${p.insight ? `<details class="insight"><summary>何が分かれば解けるか</summary><p>${esc(p.insight)}</p></details>` : ""}
     ${p.note ? `<details class="insight" open><summary>結果メモ</summary><p style="white-space:pre-line">${esc(p.note)}</p></details>` : ""}
   </section>`;
@@ -1568,6 +1580,16 @@ app.addEventListener("click", (e) => {
     case "show-all": S.view = { kind: "list" }; resetFilters(); commit(); break;
     case "add": render(); openProblemDialog(null); break;
     case "edit": render(); openProblemDialog(D.selected); break;
+    case "princ-edit": ui.princEdit = D.selected.id; render(); document.getElementById("princ-ta")?.focus(); break;
+    case "princ-cancel": ui.princEdit = null; render(); break;
+    case "princ-save": {
+      const p = D.selected;
+      const lines = (document.getElementById("princ-ta")?.value ?? "").split(/\n/).map((x) => x.trim()).filter(Boolean);
+      ui.princEdit = null;
+      patchProblem(p.id, { principles: lines }, `${problemTitle(p)} — 解法の型を更新`);
+      toast("解法の型を保存しました");
+      break;
+    }
     case "select": ui.sheet = false; selectProblem(id); break;
     case "step1": {
       const p = D.selected;
