@@ -304,7 +304,7 @@ const UNITS = [
   ...u("physics", "熱", ["気体分子運動論", "熱力学第一法則"]),
   ...u("physics", "原子", ["光電効果・粒子性", "原子核"]),
   ...u("english", "共テ リーディング", ["第1問 広告・掲示", "第2問 事実と意見", "第3問 体験記", "第4問 複数資料", "第5問 物語要約", "第6問 論説・説明文"], "reading"),
-  ...u("english", "二次 英語", ["英文和訳", "要約", "自由英作文"], "reading"),
+  ...u("english", "二次 英語", ["英文和訳", "要約", "自由英作文", "会話文", "文法・語法"], "reading"),
   ...u("english", "共テ リスニング", [
     "第1問A 短文・発話内容",
     "第1問B 短文・イラスト選択",
@@ -681,6 +681,7 @@ function problemDetail(D) {
       ? `<ol class="princ">${p.principles.map((t, i) => `<li><span class="num">${i + 1}</span><span>${esc(t)}</span></li>`).join("")}</ol>`
       : `<p class="muted-p">解法の型がまだありません。編集から追加しましょう。</p>`}
     ${p.insight ? `<details class="insight"><summary>何が分かれば解けるか</summary><p>${esc(p.insight)}</p></details>` : ""}
+    ${p.note ? `<details class="insight" open><summary>結果メモ</summary><p style="white-space:pre-line">${esc(p.note)}</p></details>` : ""}
   </section>`;
   const card2 = `<section class="card"><div class="card-label">参考書逆引き</div>
     ${p.refs.length
@@ -889,6 +890,7 @@ function openProblemDialog(editing) {
     <div class="fstack">
       <label class="field">抽象原理・解法の型（1行に1つ）<textarea class="inp" rows="3" name="principles" placeholder="対称性の確認&#10;変数分離">${esc(f.principles.join("\n"))}</textarea></label>
       <label class="field">何が分かれば解けるか<textarea class="inp" rows="3" name="insight" placeholder="この問題を解けるようになるための考え方を、問題固有の数値を使わずに書く">${esc(f.insight)}</textarea></label>
+      <label class="field">結果メモ（いつ解いたか・どこで詰まったか）<textarea class="inp" rows="2" name="note" placeholder="11/22：(1)(2)は自力、(3)は方針が出なかった">${esc(f.note ?? "")}</textarea></label>
       <label class="field">参考書逆引き（書名 | ページ、1行に1つ）<textarea class="inp" rows="2" name="refs" placeholder="一対一対応の演習 数III | p.88 例題4">${esc(f.refs.map((r) => `${r.book} | ${r.page}`).join("\n"))}</textarea></label>
     </div>
     <div class="dlg-actions">
@@ -924,6 +926,7 @@ function saveProblem() {
     difficulty: Number(g("difficulty")),
     principles: g("principles").split(/\n|、|,/).map((x) => x.trim()).filter(Boolean),
     insight: g("insight"),
+    note: g("note").trim(),
     refs: g("refs").split("\n").map((l) => l.split("|").map((x) => x.trim())).filter((x) => x[0])
       .map(([book, page]) => ({ book, page: page ?? "" })),
   };
@@ -1031,6 +1034,7 @@ imp.addEventListener("change", async () => {
   try {
     const o = JSON.parse(await file.text());
     if (!o || !Array.isArray(o.problems)) throw new Error("bad");
+    if (o.mode === "add") { addProblems(o.problems); return; }
     if (!confirm("今のデータを、このファイルの内容で置きかえますか？")) return;
     delete o.view;
     S = { ...initial(), ...o, view: { kind: "detail" } };
@@ -1042,6 +1046,35 @@ imp.addEventListener("change", async () => {
     toast("このファイルは読み込めませんでした", "err");
   }
 });
+
+// "add" files only append problems that are not in the stock yet; nothing already saved is changed.
+function addProblems(list) {
+  const key = (p) => [p.subject, p.year, p.school, p.part].map((x) => String(x ?? "").replace(/\s+/g, "")).join("|");
+  const ids = new Set(S.problems.map((p) => p.id));
+  const keys = new Set(S.problems.map(key));
+  const fresh = list
+    .filter((p) => p && SUBJECT_JA[p.subject] && UNITS.some((x) => x.id === p.unitId && x.subject === p.subject))
+    .filter((p) => !ids.has(p.id) && !keys.has(key(p)))
+    .map((p) => ({
+      id: String(p.id || newId()), subject: p.subject, unitId: p.unitId,
+      year: Number(p.year) || 0, exam: EXAMS.includes(p.exam) ? p.exam : "二次",
+      school: String(p.school ?? ""), part: String(p.part ?? ""), label: String(p.label ?? ""),
+      difficulty: Math.min(5, Math.max(1, Number(p.difficulty) || 3)),
+      principles: Array.isArray(p.principles) ? p.principles.map(String) : [],
+      insight: String(p.insight ?? ""), note: String(p.note ?? ""), refs: [],
+      step1: false, step2: false, updatedAt: Date.now(),
+      ...(UNITS.find((x) => x.id === p.unitId)?.track === "listening" ? { listening: { causes: [], script: "", heard: "" } } : {}),
+    }));
+  const skipped = list.length - fresh.length;
+  if (fresh.length === 0) { toast(`追加する過去問はありませんでした（${skipped}問はもう入っています）`); return; }
+  if (!confirm(`${fresh.length}問を追加しますか？\n今の記録はそのまま残ります。${skipped ? `\n（${skipped}問はもう入っているので飛ばします）` : ""}`)) return;
+  S.problems = [...S.problems, ...fresh];
+  S.log = [logEntry(`過去問を${fresh.length}問まとめて追加`), ...S.log].slice(0, 50);
+  ui.groupKey = null;
+  resetFilters();
+  commit();
+  toast(`${fresh.length}問を追加しました`);
+}
 
 /* ---------- events ---------- */
 app.addEventListener("click", (e) => {
