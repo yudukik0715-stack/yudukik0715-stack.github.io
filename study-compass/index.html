@@ -94,7 +94,30 @@ svg { display: block; }
 @media (min-width: 1024px) { .side { display: block; } }
 main { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 24px; padding: 24px 16px; }
 @media (min-width: 768px) { main { padding: 32px 40px; } }
-.topbar { margin-bottom: -8px; display: flex; justify-content: flex-end; gap: 16px; font-size: 12px; }
+.topbar { margin-bottom: -8px; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 16px; font-size: 12px; }
+.topbar .tb-pick { margin-right: auto; display: flex; gap: 8px; }
+.tb-btn { border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent); border-radius: 999px; padding: 4px 12px; color: var(--primary-strong); font-weight: 600; background: color-mix(in srgb, var(--primary) 6%, transparent); }
+.tb-btn .n { margin-left: 6px; font-weight: 500; color: var(--muted-foreground); }
+.src-card { margin-bottom: 16px; padding: 14px 20px; }
+.src { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 6px 0 0; font-size: 13px; }
+.src dt { color: var(--muted-foreground); }
+.src dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.pick { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.pick li + li { border-top: 1px solid var(--border); }
+.pick button { display: flex; width: 100%; gap: 10px; align-items: flex-start; padding: 10px 0; text-align: left; }
+.pick button:hover .pk-t { color: var(--primary-strong); }
+.pk-main { flex: 1; min-width: 0; }
+.pk-t { font-weight: 500; }
+.pk-s { font-size: 11px; color: var(--muted-foreground); overflow-wrap: anywhere; }
+.pk-st { flex: none; font-size: 11px; color: var(--muted-foreground); }
+.pk-st.ok { color: #16a34a; font-weight: 600; }
+.drill { display: inline-block; vertical-align: middle; margin-left: 8px; border-radius: 999px; padding: 1px 10px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); color: var(--muted-foreground); }
+.drill.ondoku { border-color: var(--primary); color: var(--primary-strong); }
+.pk-h { margin: 16px 0 4px; font-size: 12px; font-weight: 600; color: var(--muted-foreground); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+.seg button { border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+.seg button.on { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); color: var(--primary-strong); font-weight: 600; }
+.chk { display: flex; align-items: center; gap: 6px; font-size: 13px; margin: 4px 0 0; }
 
 /* menus */
 .menu-wrap { position: relative; display: inline-block; }
@@ -284,6 +307,8 @@ textarea.inp { height: auto; padding: 8px; resize: vertical; }
 <dialog id="dlg-similar" class="sm"></dialog>
 <dialog id="dlg-reflect" class="sm"></dialog>
 <dialog id="dlg-confirm" class="sm"></dialog>
+<dialog id="dlg-today"></dialog>
+<dialog id="dlg-random"></dialog>
 <input type="file" id="imp" accept="application/json,.json" hidden>
 <script>
 "use strict";
@@ -304,19 +329,20 @@ const UNITS = [
   ...u("physics", "波動", ["波の性質", "音波・ドップラー", "光の干渉"]),
   ...u("physics", "熱", ["気体分子運動論", "熱力学第一法則"]),
   ...u("physics", "原子", ["光電効果・粒子性", "原子核"]),
-  ...u("english", "共テ リーディング", ["第1問 広告・掲示", "第2問 事実と意見", "第3問 体験記", "第4問 複数資料", "第5問 物語要約", "第6問 論説・説明文"], "reading"),
-  ...u("english", "二次 英語", ["英文和訳", "要約", "自由英作文", "会話文", "文法・語法"], "reading"),
-  ...u("english", "共テ リスニング", [
-    "第1問A 短文・発話内容",
-    "第1問B 短文・イラスト選択",
-    "第2問 対話・イラスト",
-    "第3問 対話・応答",
-    "第4問A 図表完成",
-    "第4問B 条件照合",
-    "第5問 講義・ワークシート",
-    "第6問 長い対話・議論",
-  ], "listening"),
+  ...u("english", "英語", ["長文", "和訳", "文法", "会話文"], "reading"),
+  ...u("english", "リスニング", ["リスニング"], "listening"),
 ];
+// English used to be split by question type (共テ第1〜6問, 二次の和訳・会話文…). Records saved
+// under those old units move to the four current ones; the old unit stays in unitWas.
+function migrateUnit(id) {
+  if (!id || !String(id).startsWith("english:") || UNITS.some((x) => x.id === id)) return id;
+  if (/^english:共テ リスニング:/.test(id) || /:リスニング$/.test(id)) return "english:リスニング:リスニング";
+  if (/(英文和訳|自由英作文|和訳)$/.test(id)) return "english:英語:和訳";
+  if (/会話文$/.test(id)) return "english:英語:会話文";
+  if (/(文法・語法|文法)$/.test(id)) return "english:英語:文法";
+  return "english:英語:長文";
+}
+const DRILLS = { ondoku: "音読＋演習用", enshu: "演習用" };
 
 /* ---------- logic ---------- */
 const problemScore = (p) => (p.step1 ? 0.5 : 0) + (p.step1 && p.step2 ? 0.5 : 0);
@@ -447,6 +473,10 @@ S.log = (S.log ?? []).filter((l) => !["l1", "l2", "l3"].includes(l.id));
 S.selected = Object.fromEntries(Object.entries(S.selected ?? {}).map(([k, v]) => [k, S.problems.some((p) => p.id === v) ? v : undefined]));
 // Problems solved before the review feature existed: start their schedule from the last update.
 S.problems = S.problems.map((p) => (p.step1 && !p.step1At ? { ...p, step1At: p.updatedAt || Date.now(), reviewStage: 0 } : p));
+S.problems = S.problems.map((p) => {
+  const to = migrateUnit(p.unitId);
+  return to === p.unitId ? p : { ...p, unitId: to, unitWas: p.unitWas ?? p.unitId };
+});
 S.reflections = S.reflections ?? [];
 S.lastReflect = S.lastReflect ?? Date.now();
 
@@ -551,7 +581,7 @@ function sidebar(D) {
     return Math.round(v.reduce((a, b) => a + b, 0) / v.length);
   };
   const track = S.subject === "english" ? `<div class="track">${["reading", "listening"].map((tr) =>
-    `<button class="${(tr === "listening") === isL ? "on" : ""}" data-act="group" data-g="${esc(su.find((x) => x.track === tr).group)}">${tr === "reading" ? "リーディング" : "リスニング"}</button>`).join("")}</div>` : "";
+    `<button class="${(tr === "listening") === isL ? "on" : ""}" data-act="group" data-g="${esc(su.find((x) => x.track === tr).group)}">${tr === "reading" ? "長文・和訳・文法・会話文" : "リスニング"}</button>`).join("")}</div>` : "";
   const items = units.map((x) => {
     const m = unitMastery(S.problems, x.id);
     const count = S.problems.filter((p) => p.unitId === x.id).length;
@@ -581,7 +611,13 @@ function topbar(D) {
   const left = S.view.kind === "list"
     ? (D.selected ? `<button class="link-muted" data-act="to-detail">← 問題に戻る</button>` : "")
     : `<button class="link-muted" data-act="to-list">過去問ストック</button>`;
-  return `<div class="topbar">${left}<button class="link-muted" data-act="reflect">見直し</button><button class="link-primary" data-act="add">＋ 追加</button></div>`;
+  const t = todaySet();
+  const all = [...t.due, ...t.fresh];
+  const done = all.filter((id) => pickDone(id, t)).length;
+  return `<div class="topbar"><div class="tb-pick">
+      <button class="tb-btn" data-act="today">今日の問題${all.length ? `<span class="n">${done}/${all.length}</span>` : ""}</button>
+      <button class="tb-btn" data-act="random">ランダム演習</button>
+    </div>${left}<button class="link-muted" data-act="reflect">見直し</button><button class="link-primary" data-act="add">＋ 追加</button></div>`;
 }
 
 const REFLECT_EVERY = 7;
@@ -703,10 +739,10 @@ function problemDetail(D) {
   </section>`;
   return `<div class="ttl-row">
       <div style="min-width:0"><div class="eyebrow primary">Past Exam</div>
-        <h1 class="ttl">${esc(problemTitle(p))} <span class="sub">(${esc(p.label)})</span></h1></div>
+        <h1 class="ttl">${esc(problemTitle(p))} <span class="sub">(${esc(p.label)})</span>${p.drill ? `<span class="drill ${p.drill}">${DRILLS[p.drill]}</span>` : ""}</h1></div>
       <div class="row-btns">${sibMenu}<button class="icon-btn" data-act="edit" aria-label="編集">${I.pencil}</button></div>
     </div>
-    <div class="grid3">${card1}${card2}${card3}</div>
+    ${srcCard(p)}<div class="grid3">${card1}${card2}${card3}</div>
     ${p.listening ? listeningPanel(p) : ""}`;
 }
 
@@ -767,7 +803,7 @@ function tableHtml(unitId) {
   return `<table><thead><tr>
       <th>問題</th><th class="px3 hide-md">解法の型</th><th class="px3 hide-sm">区分</th><th class="px3 hide-sm">難易度</th><th class="r">再現</th>
     </tr></thead><tbody>${rows.map((p) => `<tr data-act="select" data-id="${esc(p.id)}">
-      <td><div style="font-weight:500">${esc(problemTitle(p))}</div><div class="m11">${esc(p.label)}</div></td>
+      <td><div style="font-weight:500">${esc(problemTitle(p))}</div><div class="m11">${esc(p.label)}${p.drill ? `・${DRILLS[p.drill]}` : ""}</div></td>
       <td class="px3 hide-md muted"><div class="trunc">${esc(p.principles.join("・"))}</div></td>
       <td class="px3 hide-sm muted">${esc(p.exam)}</td>
       <td class="px3 hide-sm muted">${"★".repeat(p.difficulty)}</td>
@@ -901,6 +937,8 @@ function openProblemDialog(editing) {
       <label class="field">大学・試験名<input class="inp" name="school" placeholder="東京大 理科" value="${esc(f.school)}"></label>
       <label class="field">大問<input class="inp" name="part" placeholder="第1問" value="${esc(f.part)}"></label>
       <label class="field">分野ラベル<input class="inp" name="label" placeholder="数III 微積分" value="${esc(f.label)}"></label>
+      <label class="field" id="f-drill" ${f.subject === "english" ? "" : "hidden"}>長文の使い方<select class="inp" name="drill">${[["", "—"], ["enshu", DRILLS.enshu], ["ondoku", DRILLS.ondoku]].map(([v, l]) =>
+        `<option value="${v}" ${(f.drill ?? "") === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
       <label class="field">難易度<select class="inp" name="difficulty">${[1, 2, 3, 4, 5].map((x) =>
         `<option value="${x}" ${f.difficulty === x ? "selected" : ""}>${"★".repeat(x)}</option>`).join("")}</select></label>
     </div>
@@ -947,6 +985,7 @@ function saveProblem() {
     refs: g("refs").split("\n").map((l) => l.split("|").map((x) => x.trim())).filter((x) => x[0])
       .map(([book, page]) => ({ book, page: page ?? "" })),
   };
+  if (p.subject === "english" && DRILLS[g("drill")]) p.drill = g("drill"); else delete p.drill;
   if (isListening) p.listening = ui.form.listening ?? { causes: [], script: "", heard: "" };
   else delete p.listening;
   dlgP.close();
@@ -960,6 +999,7 @@ dlgP.addEventListener("input", (e) => {
     const sel = formEl("unitId");
     sel.innerHTML = unitOpts(e.target.value, null);
     sel.selectedIndex = 0;
+    document.getElementById("f-drill").hidden = e.target.value !== "english";
   }
   updateValid();
 });
@@ -1103,6 +1143,7 @@ async function addProblems(list, updates = []) {
   const key = (p) => [p.subject, p.year, p.school, p.part].map((x) => String(x ?? "").replace(/\s+/g, "")).join("|");
   const ids = new Set(S.problems.map((p) => p.id));
   const keys = new Set(S.problems.map(key));
+  list = list.filter(Boolean).map((p) => ({ ...p, unitId: migrateUnit(p.unitId) }));
   const fresh = list
     .filter((p) => p && SUBJECT_JA[p.subject] && UNITS.some((x) => x.id === p.unitId && x.subject === p.subject))
     .filter((p) => !ids.has(p.id) && !keys.has(key(p)))
@@ -1115,16 +1156,21 @@ async function addProblems(list, updates = []) {
         difficulty: Math.min(5, Math.max(1, Number(p.difficulty) || 3)),
         principles: Array.isArray(p.principles) ? p.principles.map(String) : [],
         insight: String(p.insight ?? ""), note: String(p.note ?? ""), refs: [],
+        ...(cleanSrc(p.src) ? { src: cleanSrc(p.src) } : {}),
+        ...(DRILLS[p.drill] ? { drill: p.drill } : {}),
         step1: !!at, step2: false, updatedAt: Date.now(),
         ...(at ? { step1At: at, reviewStage: 0 } : {}),
         ...(UNITS.find((x) => x.id === p.unitId)?.track === "listening" ? { listening: { causes: [], script: "", heard: "" } } : {}),
       };
     });
   const patches = new Map();
-  for (const u of updates) {
+  for (let u of updates) {
     const p = S.problems.find((x) => x.id === u?.id);
     if (!p) continue;
     const patch = {};
+    if (u.unitId) u = { ...u, unitId: migrateUnit(u.unitId), fromUnitId: migrateUnit(u.fromUnitId) };
+    if (cleanSrc(u.src) && !p.src) patch.src = cleanSrc(u.src);
+    if (DRILLS[u.drill] && !p.drill) patch.drill = u.drill;
     if (u.unitId && u.fromUnitId === p.unitId && UNITS.some((x) => x.id === u.unitId && x.subject === p.subject)) {
       patch.unitId = u.unitId;
       if (u.label && u.fromLabel === p.label) patch.label = u.label;
@@ -1143,14 +1189,155 @@ async function addProblems(list, updates = []) {
   if (unitN) lines.push(`・${unitN}問の単元を直す`);
   const noteN = [...patches.values()].filter((x) => x.note).length;
   if (noteN) lines.push(`・${noteN}問の結果メモに追記`);
+  const srcN = fresh.filter((p) => p.src).length + [...patches.values()].filter((x) => x.src).length;
+  if (srcN) lines.push(`・${srcN}問に問題と解答のページを付ける`);
+  const drillN = fresh.filter((p) => p.drill).length + [...patches.values()].filter((x) => x.drill).length;
+  if (drillN) lines.push(`・${drillN}問に長文の使い方（演習用／音読＋演習用）を付ける`);
   if (!(await askConfirm(`次の内容を入れますか？\n${lines.join("\n")}\n今の記録はそのまま残ります。`))) return;
   S.problems = [...S.problems.map((p) => (patches.has(p.id) ? { ...p, ...patches.get(p.id), updatedAt: Date.now() } : p)), ...fresh];
   S.log = [logEntry(lines.map((x) => x.slice(1)).join("・")), ...S.log].slice(0, 50);
+  // new problems can fill thin units, so today's "手薄な単元から" picks are made again
+  if (fresh.length && S.today) S.today = { ...S.today, fresh: freshPicks() };
   ui.groupKey = null;
   resetFilters();
   commit();
   toast("入れました");
 }
+
+/* ---------- where the problem and answer are (file names and pages only, no PDFs here) ---------- */
+function cleanSrc(o) {
+  if (!o || typeof o !== "object") return null;
+  const r = {};
+  for (const k of ["print", "q", "a", "theme"]) if (o[k]) r[k] = String(o[k]).slice(0, 300);
+  return Object.keys(r).length ? r : null;
+}
+function srcCard(p) {
+  const s = p.src;
+  if (!s) return "";
+  const row = (k, v) => (v ? `<dt>${k}</dt><dd>${esc(v)}</dd>` : "");
+  return `<section class="card src-card"><div class="card-label">問題と解答の場所</div><dl class="src">
+    ${row("プリント", s.print)}${row("問題", s.q)}${row("解答", s.a)}${row("解法", s.theme)}</dl></section>`;
+}
+
+/* ---------- 今日の問題 / ランダム演習 ---------- */
+const dayKey = (t = Date.now()) => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+// 共テ英語は赤本で自分で回すので、ここからは出さない
+const pickable = (p) => !(p.subject === "english" && examGroup(p.exam) === "共テ");
+function shuffle(a) { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const TODAY_N = { math: 3, physics: 2, english: 1 };
+// From the units with the fewest solved problems, one easier unsolved problem each.
+function freshPicks() {
+  const out = [];
+  for (const sub of Object.keys(TODAY_N)) {
+    const units = shuffle(UNITS.filter((x) => x.subject === sub).map((x) => ({
+      solved: S.problems.filter((p) => p.unitId === x.id && p.step1).length,
+      pool: S.problems.filter((p) => p.unitId === x.id && !p.step1 && pickable(p)),
+    })).filter((o) => o.pool.length)).sort((a, b) => a.solved - b.solved);
+    for (const o of units.slice(0, TODAY_N[sub])) {
+      const min = Math.min(...o.pool.map((p) => p.difficulty));
+      out.push(shuffle(o.pool.filter((p) => p.difficulty <= min + 1))[0].id);
+    }
+  }
+  return out;
+}
+// Fixed for the day once made; a new day makes a new set.
+function todaySet() {
+  const now = Date.now();
+  if (S.today?.date !== dayKey(now)) {
+    S.today = { date: dayKey(now), due: S.problems.filter((p) => isDue(p, now)).map((p) => p.id), fresh: freshPicks() };
+    save();
+  }
+  const has = (id) => S.problems.some((p) => p.id === id);
+  return { ...S.today, due: S.today.due.filter(has), fresh: S.today.fresh.filter(has) };
+}
+function pickDone(id, t) {
+  const p = S.problems.find((x) => x.id === id);
+  if (!p) return false;
+  const today = (p.reviewLog ?? []).some((r) => dayKey(r.at) === dayKey());
+  if (t && t.due.includes(id)) return !isDue(p, Date.now()) && today;
+  return p.step1 || today;
+}
+function pickRows(ids, t) {
+  return `<ul class="pick">${ids.map((id) => {
+    const p = S.problems.find((x) => x.id === id);
+    if (!p) return "";
+    const done = pickDone(id, t);
+    const where = p.src?.print || p.src?.q || "";
+    return `<li><button data-pick="${esc(p.id)}"><span class="due-sub">${SUBJECT_JA[p.subject]}</span>
+      <span class="pk-main"><div class="pk-t">${esc(problemTitle(p))}</div>
+      <div class="pk-s">${esc(UNITS.find((x) => x.id === p.unitId)?.name ?? "")}・${esc(p.label)}${where ? `<br>${esc(where)}` : ""}</div></span>
+      <span class="pk-st ${done ? "ok" : ""}">${done ? "済" : "★".repeat(p.difficulty)}</span></button></li>`;
+  }).join("")}</ul>`;
+}
+const dlgT = document.getElementById("dlg-today");
+function openToday() {
+  const t = todaySet();
+  dlgT.innerHTML = `<button type="button" class="dlg-x" data-d="cancel" aria-label="閉じる">${I.x}</button>
+    <h2 class="dlg-title">今日の問題</h2>
+    <p class="dlg-desc">復習の日が来た問題と、まだ解けた問題が少ない単元から数問。今日のあいだは同じセットのまま。</p>
+    ${t.due.length ? `<div class="pk-h">今日の復習 ${t.due.length}問</div>${pickRows(t.due, t)}` : ""}
+    ${t.fresh.length ? `<div class="pk-h">手薄な単元から ${t.fresh.length}問</div>${pickRows(t.fresh, t)}` : ""}
+    ${t.due.length + t.fresh.length === 0 ? `<div class="empty-s"><p>今日出せる問題がありません</p></div>` : ""}
+    <div class="sim-actions"><button class="btn ghost" data-d="reroll">手薄な単元の問題を入れかえる</button></div>`;
+  if (!dlgT.open) dlgT.showModal();
+}
+dlgT.addEventListener("click", (e) => {
+  const pick = e.target.closest("[data-pick]")?.dataset.pick;
+  if (pick) { dlgT.close(); selectProblem(pick); return; }
+  const a = e.target.closest("[data-d]")?.dataset.d;
+  if (a === "cancel") dlgT.close();
+  else if (a === "reroll") { todaySet(); S.today = { ...S.today, fresh: freshPicks() }; commit(); openToday(); }
+});
+
+const RND_SUBJ = [["mp", "数学＋物理"], ["math", "数学"], ["physics", "物理"], ["english", "英語（個別）"]];
+function randomPicks(subj, n, withSolved) {
+  const subs = subj === "mp" ? ["math", "physics"] : [subj];
+  const pool = S.problems.filter((p) => subs.includes(p.subject) && pickable(p) && (withSolved || !p.step1));
+  const byUnit = {};
+  for (const p of shuffle(pool)) (byUnit[p.unitId] ??= []).push(p);
+  const queues = shuffle(Object.values(byUnit));
+  const out = [];
+  // one per unit in turn, so the set jumps between units
+  while (out.length < n && queues.some((q) => q.length)) {
+    for (const q of queues) { if (q.length && out.length < n) out.push(q.shift().id); }
+  }
+  return shuffle(out);
+}
+const dlgX = document.getElementById("dlg-random");
+function openRandom() {
+  const o = { subj: "mp", n: 10, solved: false, ...S.randomOpts };
+  const set = S.randomSet;
+  dlgX.innerHTML = `<button type="button" class="dlg-x" data-d="cancel" aria-label="閉じる">${I.x}</button>
+    <h2 class="dlg-title">ランダム演習</h2>
+    <p class="dlg-desc">単元をまたいでシャッフル。どの道具を使うかを自分で見抜く練習。</p>
+    <div class="m12">科目</div>
+    <div class="seg">${RND_SUBJ.map(([v, l]) => `<button data-subj="${v}" class="${o.subj === v ? "on" : ""}">${l}</button>`).join("")}</div>
+    <div class="m12">問題数</div>
+    <div class="seg">${[5, 10, 15, 20].map((v) => `<button data-n="${v}" class="${o.n === v ? "on" : ""}">${v}問</button>`).join("")}</div>
+    <label class="chk"><input type="checkbox" data-solved ${o.solved ? "checked" : ""}>解けた問題も混ぜる</label>
+    <div class="sim-actions"><button class="btn pri" data-d="go">${set ? "作り直す" : "出す"}</button></div>
+    ${set ? `<div class="pk-h">${mdTxt(set.at)} に作ったセット（${set.ids.length}問・${esc(RND_SUBJ.find(([v]) => v === set.subj)?.[1] ?? "")}）</div>${pickRows(set.ids)}` : ""}`;
+  if (!dlgX.open) dlgX.showModal();
+}
+dlgX.addEventListener("click", (e) => {
+  const pick = e.target.closest("[data-pick]")?.dataset.pick;
+  if (pick) { dlgX.close(); selectProblem(pick); return; }
+  const o = { subj: "mp", n: 10, solved: false, ...S.randomOpts };
+  const t = e.target.closest("[data-subj],[data-n],[data-solved],[data-d]");
+  if (!t) return;
+  if (t.dataset.subj) { S.randomOpts = { ...o, subj: t.dataset.subj }; save(); openRandom(); }
+  else if (t.dataset.n) { S.randomOpts = { ...o, n: Number(t.dataset.n) }; save(); openRandom(); }
+  else if (t.hasAttribute("data-solved")) { S.randomOpts = { ...o, solved: t.checked }; save(); }
+  else if (t.dataset.d === "cancel") dlgX.close();
+  else if (t.dataset.d === "go") {
+    const ids = randomPicks(o.subj, o.n, o.solved);
+    if (!ids.length) { toast("条件に合う問題がありません", "err"); return; }
+    S.randomSet = { at: Date.now(), subj: o.subj, ids };
+    save(); openRandom();
+  }
+});
+closeOnBackdrop(dlgT);
+closeOnBackdrop(dlgX);
 
 /* ---------- events ---------- */
 app.addEventListener("click", (e) => {
@@ -1203,6 +1390,8 @@ app.addEventListener("click", (e) => {
       break;
     }
     case "reflect": render(); openReflect(); break;
+    case "today": render(); openToday(); break;
+    case "random": render(); openRandom(); break;
     case "similar": render(); ui.simP = D.selected.id; ui.simIdx = 0; renderSimilar(); dlgS.showModal(); break;
     case "cause": {
       const p = D.selected;
