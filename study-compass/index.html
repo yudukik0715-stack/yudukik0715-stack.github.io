@@ -275,6 +275,28 @@ tbody tr:hover { background: var(--card); }
 dialog { position: fixed; border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: min(576px, calc(100% - 32px)); max-height: 90vh; overflow-y: auto; color: var(--foreground); background: var(--background); box-shadow: 0 20px 40px rgba(0, 0, 0, .2); }
 dialog.sm { width: min(448px, calc(100% - 32px)); }
 dialog::backdrop { background: rgba(0, 0, 0, .6); }
+/* ---------- PDF viewer + note ---------- */
+#dlg-viewer { width: 100vw; height: 100dvh; max-width: none; max-height: none; inset: 0; margin: 0; padding: 0; border: 0; border-radius: 0; overflow: hidden; background: #d9dde3; box-shadow: none; }
+#dlg-viewer[open] { display: flex; flex-direction: column; }
+.pv-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; padding-top: max(8px, env(safe-area-inset-top)); background: var(--background); border-bottom: 1px solid var(--border); }
+.pv-bar button { font: inherit; font-size: 14px; font-weight: 600; height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--background); color: var(--foreground); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.pv-bar button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
+.pv-title { flex: 1 1 120px; min-width: 0; font-size: 13px; color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pv-tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; width: 100%; }
+.pv-tools[hidden] { display: none; }
+.pv-tools .pv-sw { width: 36px; padding: 0; justify-content: center; }
+.pv-tools .pv-sw i { width: 18px; height: 18px; border-radius: 50%; display: block; }
+.pv-tools .pv-sw[aria-pressed="true"] { background: var(--accent); border-color: var(--foreground); box-shadow: inset 0 0 0 1px var(--foreground); }
+.pv-pages { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; padding: 12px 8px 40px; display: flex; flex-direction: column; align-items: center; gap: 12px; overscroll-behavior: contain; }
+.pv-page { position: relative; width: min(100%, 900px); background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.18); flex: none; }
+.pv-page canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.pv-page .pv-num { position: absolute; right: 6px; bottom: 4px; font-size: 11px; color: #94a3b8; pointer-events: none; }
+.pv-page.blank .pv-num::before { content: "白紙 "; }
+#dlg-viewer.noting .pv-ink { cursor: crosshair; }
+#dlg-viewer.noting.finger .pv-ink { touch-action: none; }
+@media (max-width: 480px) { .pv-bar button { font-size: 13px; height: 34px; padding: 0 9px; } .pv-tools .pv-sw { width: 34px; } .pv-title { flex-basis: 60px; } }
+.pv-msg { margin: 40px auto; color: #475569; font-size: 14px; }
+
 .dlg-x { position: absolute; right: 16px; top: 16px; color: var(--muted-foreground); }
 .dlg-title { margin: 0; padding-right: 24px; font-size: 18px; font-weight: 600; }
 .dlg-desc { margin: 6px 0 16px; font-size: 14px; color: var(--muted-foreground); }
@@ -317,7 +339,7 @@ body:has(#audio-bar:not([hidden])) #toasts { bottom: 120px; }
 #audio-bar audio { grid-column: 1 / -1; width: 100%; }
 #audio-bar .ab-x { grid-row: 1; grid-column: 2; border: 0; background: none; font-size: 18px; line-height: 1; padding: 2px 6px; cursor: pointer; color: inherit; }
 .audio-btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--background); border-radius: 999px; padding: 4px 12px; font-size: 13px; cursor: pointer; color: inherit; }
-#toasts { position: fixed; bottom: 16px; right: 16px; left: 16px; z-index: 100; display: grid; justify-items: end; gap: 8px; pointer-events: none; }
+#toasts, .toasts-in { position: fixed; bottom: 16px; right: 16px; left: 16px; z-index: 100; display: grid; justify-items: end; gap: 8px; pointer-events: none; }
 .toast { pointer-events: auto; display: flex; align-items: center; gap: 8px; max-width: 360px; background: var(--background); border: 1px solid var(--border); box-shadow: 0 6px 16px rgba(15, 23, 42, .12); border-radius: 8px; padding: 12px 16px; font-size: 13px; animation: tin .2s ease-out; }
 .toast .ic { color: var(--success); }
 .toast.err .ic { color: var(--destructive); }
@@ -335,6 +357,7 @@ body:has(#audio-bar:not([hidden])) #toasts { bottom: 120px; }
 <dialog id="dlg-today"></dialog>
 <dialog id="dlg-random"></dialog>
 <dialog id="dlg-pdf"></dialog>
+<dialog id="dlg-viewer"></dialog>
 <input type="file" id="imp" accept="application/json,.json" hidden>
 <input type="file" id="imp-pdf" accept="application/pdf,.pdf,audio/*,.mp3,.m4a,.aac,.wav,.zip,application/zip" multiple hidden>
 <script>
@@ -956,7 +979,14 @@ function toast(msg, kind = "ok") {
   const el = document.createElement("div");
   el.className = `toast ${kind === "err" ? "err" : ""}`;
   el.innerHTML = `${kind === "plain" ? "" : `<span class="ic">${kind === "err" ? I.alert : I.check}</span>`}<span>${esc(msg)}</span>`;
-  document.getElementById("toasts").appendChild(el);
+  // keep toasts above an open modal dialog (dialogs sit in the top layer)
+  const dlg = [...document.querySelectorAll("dialog[open]")].pop();
+  let box = document.getElementById("toasts");
+  if (dlg) {
+    box = dlg.querySelector(":scope > .toasts-in");
+    if (!box) { box = document.createElement("div"); box.className = "toasts-in"; dlg.appendChild(box); }
+  }
+  box.appendChild(el);
   setTimeout(() => el.remove(), 3200);
 }
 
@@ -1487,6 +1517,13 @@ impPdf.addEventListener("change", async () => {
   openPdfList();
   hashPending();
 });
+function openPdfTab(name, page, w) {
+  w = w ?? window.open("", "_blank");
+  return pdfTx("readonly", (st) => st.get(name)).then((blob) => {
+    const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" })) + (page ? `#page=${page}` : "");
+    if (w) w.location.href = url; else location.href = url;
+  }).catch(() => { if (w) w.close(); toast("PDFを開けませんでした", "err"); });
+}
 async function openPdf(name, page) {
   const shown = pdfKey(name);
   name = pdfStored(shown);
@@ -1495,16 +1532,307 @@ async function openPdf(name, page) {
       : `${shown} はまだ取り込まれていません（バックアップ → 取り込んだPDF・音声）`, "err");
     return;
   }
-  const w = window.open("", "_blank");
-  try {
-    const blob = await pdfTx("readonly", (st) => st.get(name));
-    const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" })) + (page ? `#page=${page}` : "");
-    if (w) w.location.href = url; else location.href = url;
-  } catch (e) {
-    if (w) w.close();
-    toast("PDFを開けませんでした", "err");
-  }
+  if (isAudioName(name)) { openPdfTab(name, page); return; }
+  pv.open(name, Number(page) || 1);
 }
+
+/* ---------- PDF viewer with handwriting notes (Apple Pencil) ----------
+   Notes live in their own IndexedDB ("study-compass-notes"), keyed by the stored PDF name.
+   Strokes are kept in page-relative coordinates (x and y divided by the page's CSS width),
+   so they line up at any screen size. Nothing here touches localStorage or the PDF itself. */
+const PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/";
+let pdfjsP = null;
+function loadPdfjs() {
+  if (globalThis.pdfjsLib) return Promise.resolve(globalThis.pdfjsLib);
+  return pdfjsP ??= new Promise((res, rej) => {
+    const sc = document.createElement("script");
+    sc.src = PDFJS + "build/pdf.min.js";
+    sc.onload = () => { pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + "build/pdf.worker.min.js"; res(pdfjsLib); };
+    sc.onerror = () => { pdfjsP = null; sc.remove(); rej(new Error("pdfjs")); };
+    document.head.appendChild(sc);
+  });
+}
+let notesDbP = null;
+function notesDb() {
+  return notesDbP ??= new Promise((res, rej) => {
+    const r = indexedDB.open("study-compass-notes", 1);
+    r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains("notes")) r.result.createObjectStore("notes"); };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => { notesDbP = null; rej(r.error); };
+  });
+}
+async function notesTx(mode, fn) {
+  const db = await notesDb();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("notes", mode);
+    const out = fn(tx.objectStore("notes"));
+    tx.oncomplete = () => res(out?.result ?? out);
+    tx.onerror = () => rej(tx.error);
+    tx.onabort = () => rej(tx.error);
+  });
+}
+const PV_PENS = [
+  { id: "k", label: "黒", c: "#111827", w: 0.0026 },
+  { id: "r", label: "赤", c: "#dc2626", w: 0.0026 },
+  { id: "b", label: "青", c: "#2563eb", w: 0.0026 },
+  { id: "y", label: "マーカー", c: "rgba(250, 204, 21, .45)", w: 0.016 },
+];
+const pv = (() => {
+  const dlg = document.getElementById("dlg-viewer");
+  let doc = null, name = "", note = null, pages = [], io = null, saveT = 0, gen = 0;
+  let noting = false, finger = false, tool = "k", undo = [], cur = null;
+  const fresh = () => ({ v: 1, pages: {}, extra: 0 });
+  const keyOf = (pg) => pg.blank ? `b${pg.n}` : String(pg.n);
+  const strokesOf = (pg) => (note.pages[keyOf(pg)] ??= []);
+
+  function bar() {
+    return `<div class="pv-bar">
+      <button type="button" data-v="close">${I.x}閉じる</button>
+      <span class="pv-title">${esc(name)}</span>
+      <button type="button" data-v="note" aria-pressed="${noting}">${I.pencil}ノート</button>
+      <button type="button" data-v="tab">別タブ</button>
+      <div class="pv-tools" ${noting ? "" : "hidden"}>
+        ${PV_PENS.map((p) => `<button type="button" class="pv-sw" data-v="pen" data-pen="${p.id}" aria-label="${p.label}" aria-pressed="${tool === p.id}"><i style="background:${p.c}"></i></button>`).join("")}
+        <button type="button" data-v="pen" data-pen="e" aria-pressed="${tool === "e"}">消しゴム</button>
+        <button type="button" data-v="undo">戻す</button>
+        <button type="button" data-v="blank">白紙を足す</button>
+        <button type="button" data-v="finger" aria-pressed="${finger}">指でも書く</button>
+      </div>
+    </div>`;
+  }
+  function syncBar() {
+    dlg.classList.toggle("noting", noting);
+    dlg.classList.toggle("finger", finger);
+    const b = dlg.querySelector(".pv-bar");
+    if (b) b.outerHTML = bar();
+  }
+  function save(now) {
+    clearTimeout(saveT);
+    const doSave = () => {
+      if (!note) return;
+      note.updated = Date.now();
+      const n = name, v = JSON.parse(JSON.stringify(note));
+      notesTx("readwrite", (st) => st.put(v, n)).catch(() => toast("ノートを保存できませんでした（端末の空きが足りないかも）", "err"));
+    };
+    if (now) doSave(); else saveT = setTimeout(doSave, 400);
+  }
+
+  function drawStroke(ctx, st, W) {
+    const p = st.p;
+    if (!p || p.length < 2) return;
+    ctx.strokeStyle = st.c;
+    ctx.lineWidth = Math.max(1, st.w * W);
+    ctx.lineCap = ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(p[0] * W, p[1] * W);
+    if (p.length === 2) ctx.lineTo(p[0] * W + 0.01, p[1] * W);
+    for (let i = 2; i < p.length; i += 2) ctx.lineTo(p[i] * W, p[i + 1] * W);
+    ctx.stroke();
+  }
+  function redrawInk(pg) {
+    const cv = pg.ink, W = pg.el.clientWidth, dpr = Math.min(devicePixelRatio || 1, 2);
+    const w = Math.round(W * dpr), h = Math.round(W / pg.ratio * dpr);
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    const ctx = cv.getContext("2d");
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (const st of note.pages[keyOf(pg)] ?? []) drawStroke(ctx, st, W);
+  }
+  async function renderImg(pg) {
+    if (pg.blank || pg.rendering || pg.renderedW === pg.el.clientWidth) return;
+    pg.rendering = true;
+    const myGen = gen;
+    try {
+      const page = await doc.getPage(pg.n);
+      if (myGen !== gen) return;
+      const W = pg.el.clientWidth, dpr = Math.min(devicePixelRatio || 1, 2);
+      const vp = page.getViewport({ scale: (W * dpr) / page.getViewport({ scale: 1 }).width });
+      const cv = pg.img;
+      cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+      await page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise;
+      pg.renderedW = W;
+    } catch (e) { /* page failed to draw; leave it white */ }
+    finally { pg.rendering = false; }
+  }
+  function dropImg(pg) {
+    if (pg.blank || !pg.renderedW) return;
+    pg.img.width = pg.img.height = 0;
+    pg.renderedW = 0;
+  }
+  function addPageEl(pg) {
+    const el = document.createElement("div");
+    el.className = "pv-page" + (pg.blank ? " blank" : "");
+    el.style.aspectRatio = `${pg.ratio}`;
+    el.innerHTML = `<canvas class="pv-img"></canvas><canvas class="pv-ink"></canvas><span class="pv-num">${pg.n}</span>`;
+    pg.el = el; pg.img = el.children[0]; pg.ink = el.children[1];
+    el._pg = pg;
+    dlg.querySelector(".pv-pages").appendChild(el);
+    io.observe(el);
+    redrawInk(pg);
+  }
+
+  // ---- drawing ----
+  function pt(pg, e) {
+    const r = pg.el.getBoundingClientRect();
+    return [Math.round(((e.clientX - r.left) / r.width) * 1e4) / 1e4, Math.round(((e.clientY - r.top) / r.width) * 1e4) / 1e4];
+  }
+  const canDraw = (e) => noting && (e.pointerType === "pen" || e.pointerType === "mouse" || finger);
+  function eraseAt(pg, x, y) {
+    const list = strokesOf(pg), r = 0.012, hit = [];
+    for (let i = list.length - 1; i >= 0; i--) {
+      const p = list[i].p;
+      for (let j = 0; j < p.length; j += 2) if (Math.hypot(p[j] - x, p[j + 1] - y) < r + list[i].w / 2) { hit.push({ i, st: list[i] }); list.splice(i, 1); break; }
+    }
+    if (hit.length) { cur.erased.push(...hit); redrawInk(pg); }
+  }
+  function onDown(e) {
+    const el = e.target.closest?.(".pv-page");
+    if (!el || !canDraw(e)) return;
+    e.preventDefault();
+    const pg = el._pg;
+    try { el.setPointerCapture(e.pointerId); } catch (_) {}
+    const [x, y] = pt(pg, e);
+    if (tool === "e") { cur = { pg, id: e.pointerId, erase: true, erased: [] }; eraseAt(pg, x, y); return; }
+    const pen = PV_PENS.find((p) => p.id === tool);
+    const st = { c: pen.c, w: pen.w, p: [x, y] };
+    strokesOf(pg).push(st);
+    cur = { pg, id: e.pointerId, st };
+    redrawInk(pg);
+  }
+  function onMove(e) {
+    if (!cur || e.pointerId !== cur.id) return;
+    e.preventDefault();
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    for (const ev of (evs.length ? evs : [e])) {
+      const [x, y] = pt(cur.pg, ev);
+      if (cur.erase) { eraseAt(cur.pg, x, y); continue; }
+      const p = cur.st.p;
+      if (Math.abs(p[p.length - 2] - x) + Math.abs(p[p.length - 1] - y) < 0.0008) continue;
+      p.push(x, y);
+    }
+    if (!cur.erase) {
+      // draw just the new tail for speed; full redraw happens on pointerup
+      const pg = cur.pg, W = pg.el.clientWidth, dpr = Math.min(devicePixelRatio || 1, 2), ctx = pg.ink.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const p = cur.st.p, n = p.length;
+      if (n >= 4) drawStroke(ctx, { ...cur.st, p: p.slice(Math.max(0, n - 6)) }, W);
+    }
+  }
+  function onUp(e) {
+    if (!cur || e.pointerId !== cur.id) return;
+    const c = cur; cur = null;
+    if (c.erase) { if (c.erased.length) { undo.push({ t: "erase", pg: c.pg, items: c.erased.reverse() }); save(); } return; }
+    undo.push({ t: "add", pg: c.pg, st: c.st });
+    redrawInk(c.pg);
+    save();
+  }
+  function onTouchStart(e) {
+    // Keep the Pencil from scrolling the page; fingers still scroll unless 指でも書く is on.
+    if (!noting) return;
+    if (finger || [...e.touches].some((t) => t.touchType === "stylus")) e.preventDefault();
+  }
+  function doUndo() {
+    const a = undo.pop();
+    if (!a) { toast("戻せるものがありません"); return; }
+    const list = strokesOf(a.pg);
+    if (a.t === "add") { const i = list.lastIndexOf(a.st); if (i >= 0) list.splice(i, 1); }
+    else for (const { i, st } of a.items) list.splice(Math.min(i, list.length), 0, st);
+    redrawInk(a.pg);
+    save();
+  }
+  function addBlank() {
+    note.extra = (note.extra || 0) + 1;
+    const pg = { n: note.extra, blank: true, ratio: pages.find((x) => !x.blank)?.ratio ?? 1 / 1.414 };
+    pages.push(pg);
+    addPageEl(pg);
+    save();
+    pg.el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function open(fileName, page) {
+    gen++;
+    name = fileName; noting = false; undo = []; cur = null; pages = []; doc = null; note = null;
+    dlg.innerHTML = `${bar()}<div class="pv-pages"><p class="pv-msg">PDFを読み込んでいます…</p></div>`;
+    syncBar();
+    if (!dlg.open) dlg.showModal();
+    const myGen = gen;
+    try {
+      const [lib, blob, saved] = await Promise.all([
+        loadPdfjs(),
+        pdfTx("readonly", (st) => st.get(fileName)),
+        notesTx("readonly", (st) => st.get(fileName)).catch(() => undefined),
+      ]);
+      if (myGen !== gen) return;
+      note = saved && typeof saved === "object" && saved.pages ? saved : fresh();
+      doc = await lib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()), cMapUrl: PDFJS + "cmaps/", cMapPacked: true, standardFontDataUrl: PDFJS + "standard_fonts/" }).promise;
+      if (myGen !== gen) return;
+      for (let n = 1; n <= doc.numPages; n++) {
+        const vp = (await doc.getPage(n)).getViewport({ scale: 1 });
+        pages.push({ n, ratio: vp.width / vp.height });
+      }
+      for (let n = 1; n <= (note.extra || 0); n++) pages.push({ n, blank: true, ratio: pages[0]?.ratio ?? 1 / 1.414 });
+    } catch (e) {
+      if (myGen !== gen) return;
+      dlg.querySelector(".pv-pages").innerHTML = `<p class="pv-msg">アプリの中で開けませんでした（ネットにつながってないかも）。<br>上の「別タブ」なら見られます。</p>`;
+      return;
+    }
+    const box = dlg.querySelector(".pv-pages");
+    box.innerHTML = "";
+    io?.disconnect();
+    io = new IntersectionObserver((ents) => {
+      for (const en of ents) { const pg = en.target._pg; if (en.isIntersecting) renderImg(pg); else dropImg(pg); }
+    }, { root: box, rootMargin: "150% 0px" });
+    pages.forEach(addPageEl);
+    const target = pages.find((x) => !x.blank && x.n === page);
+    if (target && page > 1) requestAnimationFrame(() => { box.scrollTop = target.el.offsetTop - 12; });
+  }
+  function close() {
+    if (note && name) save(true);
+    gen++;
+    io?.disconnect(); io = null;
+    doc?.destroy?.(); doc = null;
+    dlg.innerHTML = "";
+    if (dlg.open) dlg.close();
+  }
+
+  dlg.addEventListener("pointerdown", onDown);
+  dlg.addEventListener("pointermove", onMove);
+  dlg.addEventListener("pointerup", onUp);
+  dlg.addEventListener("pointercancel", onUp);
+  dlg.addEventListener("touchstart", onTouchStart, { passive: false });
+  dlg.addEventListener("touchmove", (e) => { if (cur) e.preventDefault(); }, { passive: false });
+  dlg.addEventListener("cancel", (e) => { e.preventDefault(); close(); });
+  dlg.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-v]");
+    if (!b) return;
+    switch (b.dataset.v) {
+      case "close": close(); break;
+      case "tab": openPdfTab(name); break;
+      case "note":
+        noting = !noting; syncBar();
+        if (noting) toast(finger ? "ノート：指やペンで書けます" : "ノート：Apple Pencilで書けます（指はスクロール）");
+        break;
+      case "pen": tool = b.dataset.pen; syncBar(); break;
+      case "undo": doUndo(); break;
+      case "blank": addBlank(); break;
+      case "finger": finger = !finger; syncBar(); break;
+    }
+  });
+  let rz = 0;
+  addEventListener("resize", () => {
+    if (!dlg.open || !pages.length) return;
+    clearTimeout(rz);
+    rz = setTimeout(() => {
+      const box = dlg.querySelector(".pv-pages");
+      for (const pg of pages) {
+        redrawInk(pg);
+        if (pg.renderedW) { pg.renderedW = 0; const r = pg.el.getBoundingClientRect(), b = box.getBoundingClientRect(); if (r.bottom > b.top - b.height && r.top < b.bottom + b.height) renderImg(pg); }
+      }
+    }, 200);
+  });
+  return { open, close };
+})();
 loadPdfNames();
 
 // List of imported PDFs and a button to import more. No delete here on purpose: the user asked
