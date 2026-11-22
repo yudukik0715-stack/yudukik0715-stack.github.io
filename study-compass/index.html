@@ -301,6 +301,13 @@ textarea.inp { height: auto; padding: 8px; resize: vertical; }
 .kv.col { flex-direction: column; gap: 2px; }
 
 /* toast */
+#audio-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 90; display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; background: var(--background); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 6px 16px rgba(15, 23, 42, .15); padding: 8px 10px; max-width: 640px; margin: 0 auto; }
+#audio-bar[hidden] { display: none; }
+body:has(#audio-bar:not([hidden])) #toasts { bottom: 120px; }
+#audio-bar .ab-name { font-size: 12px; color: var(--muted-foreground, #64748b); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#audio-bar audio { grid-column: 1 / -1; width: 100%; }
+#audio-bar .ab-x { grid-row: 1; grid-column: 2; border: 0; background: none; font-size: 18px; line-height: 1; padding: 2px 6px; cursor: pointer; color: inherit; }
+.audio-btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--background); border-radius: 999px; padding: 4px 12px; font-size: 13px; cursor: pointer; color: inherit; }
 #toasts { position: fixed; bottom: 16px; right: 16px; left: 16px; z-index: 100; display: grid; justify-items: end; gap: 8px; pointer-events: none; }
 .toast { pointer-events: auto; display: flex; align-items: center; gap: 8px; max-width: 360px; background: var(--background); border: 1px solid var(--border); box-shadow: 0 6px 16px rgba(15, 23, 42, .12); border-radius: 8px; padding: 12px 16px; font-size: 13px; animation: tin .2s ease-out; }
 .toast .ic { color: var(--success); }
@@ -311,6 +318,7 @@ textarea.inp { height: auto; padding: 8px; resize: vertical; }
 <body>
 <div id="app"></div>
 <div id="toasts"></div>
+<div id="audio-bar" hidden><div class="ab-name" id="ab-name"></div><audio id="ab-audio" controls preload="auto"></audio><button type="button" class="ab-x" id="ab-x" aria-label="閉じる">×</button></div>
 <dialog id="dlg-problem"></dialog>
 <dialog id="dlg-similar" class="sm"></dialog>
 <dialog id="dlg-reflect" class="sm"></dialog>
@@ -319,7 +327,7 @@ textarea.inp { height: auto; padding: 8px; resize: vertical; }
 <dialog id="dlg-random"></dialog>
 <dialog id="dlg-pdf"></dialog>
 <input type="file" id="imp" accept="application/json,.json" hidden>
-<input type="file" id="imp-pdf" accept="application/pdf,.pdf" multiple hidden>
+<input type="file" id="imp-pdf" accept="application/pdf,.pdf,audio/*,.mp3,.m4a,.aac,.wav" multiple hidden>
 <script>
 "use strict";
 
@@ -596,7 +604,7 @@ function header() {
         ${ui.openMenu === "backup" ? `<div class="menu right" style="min-width:200px">
           <button data-act="export"><span>データを書き出す</span></button>
           <button data-act="import"><span>データを読み込む</span></button>
-          <button data-act="import-pdf"><span>取り込んだPDF</span><span class="muted">${pdfNames.size ? `${pdfNames.size}件` : ""}</span></button>
+          <button data-act="import-pdf"><span>取り込んだPDF・音声</span><span class="muted">${pdfNames.size ? `${pdfNames.size}件` : ""}</span></button>
         </div>` : ""}
       </div>
     </div>
@@ -1274,14 +1282,47 @@ function pdfLinks(text) {
     return `<button class="pdf-link ${has ? "" : "missing"}" data-act="pdf" data-file="${name}" data-page="${page ?? ""}">${name}</button>${rest}`;
   });
 }
+// Listening audio the user imported (e.g. 2021_本試_英語リスニング_音声.mp3) is matched to a
+// listening problem by year and 本試/追試; it plays in a bar that stays put while the page re-renders.
+const isAudioName = (n) => /\.(mp3|m4a|aac|wav|mp4)$/i.test(n);
+function audioFor(p) {
+  if (UNITS.find((x) => x.id === p.unitId)?.track !== "listening") return null;
+  const tsuishi = p.exam === "共テ追試";
+  const keys = [...pdfNames].filter((k) => isAudioName(k) && k.includes(String(p.year)) && /リスニング|listening/i.test(k) && /追試/.test(k) === tsuishi);
+  return keys.sort()[0] ?? null;
+}
+function audioRow(p) {
+  if (UNITS.find((x) => x.id === p.unitId)?.track !== "listening") return "";
+  const k = audioFor(p);
+  return `<dt>音声</dt><dd>${k ? `<button class="audio-btn" data-act="audio" data-file="${esc(k)}">▶ ${esc(k)}</button>`
+    : `<span class="muted">${p.year}年の音声ファイルを「バックアップ → 取り込んだPDF・音声」で入れると、ここで再生できます</span>`}</dd>`;
+}
+const abBar = document.getElementById("audio-bar"), abAudio = document.getElementById("ab-audio");
+let abUrl = null;
+async function playAudio(name) {
+  try {
+    const blob = await pdfTx("readonly", (st) => st.get(name));
+    if (!blob) throw new Error("missing");
+    if (abUrl) URL.revokeObjectURL(abUrl);
+    abUrl = URL.createObjectURL(blob);
+    abAudio.src = abUrl;
+    document.getElementById("ab-name").textContent = name;
+    abBar.hidden = false;
+    abAudio.play().catch(() => { /* iOS may need a second tap on the player */ });
+  } catch (e) { toast("音声を開けませんでした", "err"); }
+}
+document.getElementById("ab-x").addEventListener("click", () => {
+  abAudio.pause(); abAudio.removeAttribute("src"); abAudio.load();
+  if (abUrl) URL.revokeObjectURL(abUrl); abUrl = null; abBar.hidden = true;
+});
 function srcCard(p) {
   const s = p.src;
   if (!s) return "";
   const row = (k, v) => (v ? `<dt>${k}</dt><dd>${pdfLinks(v)}</dd>` : "");
   const ansPrint = s.print ? s.print.replace(/_問題\.pdf.*$/, "_解答.pdf") : "";
   return `<section class="card src-card"><div class="card-label">問題と解答の場所</div><dl class="src">
-    ${row("プリント", s.print)}${ansPrint ? row("プリント解答", ansPrint) : ""}${row("問題", s.q)}${row("解答", s.a)}<dt>解法</dt><dd>${esc(s.theme ?? "")}</dd></dl>
-    ${pdfNames.size ? "" : `<p class="src-hint">「バックアップ → 取り込んだPDF」でPDFを入れると、ファイル名を押して開けます（PDFはこの端末の中だけに保存）</p>`}</section>`;
+    ${row("プリント", s.print)}${ansPrint ? row("プリント解答", ansPrint) : ""}${row("問題", s.q)}${row("解答", s.a)}${audioRow(p)}<dt>解法</dt><dd>${esc(s.theme ?? "")}</dd></dl>
+    ${pdfNames.size ? "" : `<p class="src-hint">「バックアップ → 取り込んだPDF・音声」でPDFを入れると、ファイル名を押して開けます（この端末の中だけに保存）</p>`}</section>`;
 }
 
 /* ---------- PDFs kept only in this browser (IndexedDB), never uploaded ---------- */
@@ -1372,18 +1413,21 @@ function hashPending(report = false) {
 }
 const impPdf = document.getElementById("imp-pdf");
 impPdf.addEventListener("change", async () => {
-  const files = [...(impPdf.files ?? [])].filter((x) => /\.pdf$/i.test(x.name));
+  const files = [...(impPdf.files ?? [])].filter((x) => /\.pdf$/i.test(x.name) || isAudioName(x.name) || /^audio\//.test(x.type));
   impPdf.value = "";
   if (!files.length) return;
   let ok = 0;
   try {
     for (const file of files) {
-      await pdfTx("readwrite", (st) => st.put(file, pdfKey(file.name)));
-      pdfNames.add(pdfKey(file.name));
-      delete pdfHashes[pdfKey(file.name)];
+      let key = pdfKey(file.name);
+      // the Files app can hand over an audio file without its extension
+      if (/^audio\//.test(file.type) && !isAudioName(key)) key += `.${file.type === "audio/mpeg" ? "mp3" : file.type.split("/")[1].replace(/^x-/, "")}`;
+      await pdfTx("readwrite", (st) => st.put(file, key));
+      pdfNames.add(key);
+      delete pdfHashes[key];
       ok++;
     }
-    toast(`PDFを${ok}件取り込みました`);
+    toast(`${ok}件取り込みました`);
   } catch (e) {
     toast(ok ? `${ok}件で止まりました（端末の空きが足りないかも）` : "PDFを取り込めませんでした", "err");
   }
@@ -1396,7 +1440,7 @@ async function openPdf(name, page) {
   name = pdfStored(shown);
   if (!name) {
     toast(hashing ? "取り込んだPDFを照合中です。少し待ってからもう一度押してね"
-      : `${shown} はまだ取り込まれていません（バックアップ → 取り込んだPDF）`, "err");
+      : `${shown} はまだ取り込まれていません（バックアップ → 取り込んだPDF・音声）`, "err");
     return;
   }
   const w = window.open("", "_blank");
@@ -1417,10 +1461,10 @@ const dlgPdfList = document.getElementById("dlg-pdf");
 function openPdfList() {
   const names = [...pdfNames].sort((a, b) => a.localeCompare(b, "ja"));
   dlgPdfList.innerHTML = `<button type="button" class="dlg-x" data-d="cancel" aria-label="閉じる">${I.x}</button>
-    <h2 class="dlg-title">取り込んだPDF（${names.length}件）</h2>
+    <h2 class="dlg-title">取り込んだPDF・音声（${names.length}件）</h2>
     ${pdfAlias.size ? `<p class="dlg-desc">そのうち${pdfAlias.size}件は中身で問題とつながっています（ファイル名がちがっても開けます）。</p>` : ""}
-    <p class="dlg-desc">PDFはこの端末の中だけに保存されます。まとめて入れるときは、ファイルを選ぶ画面で「選択」を押して複数選んでね。同じ名前のPDFは新しい方で上書きされます。</p>
-    <div class="sim-actions"><button class="btn pri" data-d="add">PDFを取り込む</button></div>
+    <p class="dlg-desc">PDFとリスニングの音声はこの端末の中だけに保存されます。まとめて入れるときは、ファイルを選ぶ画面で「選択」を押して複数選んでね。同じ名前のファイルは新しい方で上書きされます。</p>
+    <div class="sim-actions"><button class="btn pri" data-d="add">PDF・音声を取り込む</button></div>
     ${names.length ? `<ul class="pdf-list">${names.map((n) => `<li><span>${esc(n)}</span></li>`).join("")}</ul>` : `<p class="dlg-desc" style="margin-top:12px">まだ何も入っていません。</p>`}`;
   if (!dlgPdfList.open) dlgPdfList.showModal();
 }
@@ -1573,6 +1617,7 @@ app.addEventListener("click", (e) => {
     case "import": render(); imp.click(); break;
     case "import-pdf": render(); openPdfList(); break;
     case "pdf": openPdf(t.dataset.file, t.dataset.page); break;
+    case "audio": playAudio(t.dataset.file); break;
     case "group": ui.group = t.dataset.g; render(); break;
     case "unit": S.view = { kind: "list", unitId: id }; ui.sheet = false; resetFilters(); commit(); break;
     case "to-detail": S.view = { kind: "detail" }; commit(); break;
