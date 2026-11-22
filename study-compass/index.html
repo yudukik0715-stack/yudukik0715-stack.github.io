@@ -1118,15 +1118,32 @@ function parseJsonLoose(t) {
     return JSON.parse(t.slice(i, j + 1));
   }
 }
-// Link form: .../study-compass/#add=<name> adds data/<name>.json without picking a file.
+// Link forms:
+//  #d=<base64url of deflate-raw JSON> carries the data inside the link itself. The part after #
+//  never reaches the server, so problem data stays out of the public repository.
+//  #add=<name> (older) fetches data/<name>.json.
+async function inflateLink(b64) {
+  const bin = atob(b64.replace(/-/g, "+").replace(/_/g, "/"));
+  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return await new Response(stream).text();
+}
 async function addFromLink() {
+  const d = location.hash.match(/^#d=([\w-]+)$/);
   const m = location.hash.match(/^#add=([\w-]+)$/);
-  if (!m) return;
+  if (!m && !d) return;
   history.replaceState(null, "", location.pathname + location.search);
   try {
-    const r = await fetch(`data/${m[1]}.json`, { cache: "no-store" });
-    if (!r.ok) throw new Error(String(r.status));
-    const o = parseJsonLoose(await r.text());
+    let text;
+    if (d) {
+      if (typeof DecompressionStream !== "function") { toast("このブラウザではリンクから追加できません（Safariを最新にしてね）", "err"); return; }
+      text = await inflateLink(d[1]);
+    } else {
+      const r = await fetch(`data/${m[1]}.json`, { cache: "no-store" });
+      if (!r.ok) throw new Error(String(r.status));
+      text = await r.text();
+    }
+    const o = parseJsonLoose(text);
     if (!o || !(Array.isArray(o.problems) || Array.isArray(o.updates))) throw new Error("bad");
     addProblems(o.problems ?? [], o.updates ?? []);
   } catch (e) {
