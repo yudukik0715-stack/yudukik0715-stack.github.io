@@ -1,0 +1,1728 @@
+{
+ "mode": "add",
+ "problems": [
+  {
+   "id": "set-gk23-p-core-1",
+   "subject": "physics",
+   "unitId": "physics:力学:円運動・単振動",
+   "year": 2023,
+   "exam": "二次",
+   "school": "学習院大",
+   "part": "第1問",
+   "label": "ばねでつながれた小球の単振動",
+   "difficulty": 4,
+   "principles": [
+    "円運動・単振動"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理04_円運動・単振動_問題.pdf の 13番",
+    "q": "gakushuin-2023-core-physics-mondai.pdf p.4〜5",
+    "a": "gakushuin-2023-core-physics-kaitou.pdf p.2〜3"
+   }
+  },
+  {
+   "id": "set-gk23-p-core-2",
+   "subject": "physics",
+   "unitId": "physics:電磁気:電磁誘導",
+   "year": 2023,
+   "exam": "二次",
+   "school": "学習院大",
+   "part": "第2問",
+   "label": "磁場に入る正方形ワイヤー",
+   "difficulty": 4,
+   "principles": [
+    "電磁誘導"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理09_電磁誘導_問題.pdf の 18番",
+    "q": "gakushuin-2023-core-physics-mondai.pdf p.6〜7",
+    "a": "gakushuin-2023-core-physics-kaitou.pdf p.4〜5"
+   }
+  },
+  {
+   "id": "set-gk23-p-core-3",
+   "subject": "physics",
+   "unitId": "physics:波動:光の干渉",
+   "year": 2023,
+   "exam": "二次",
+   "school": "学習院大",
+   "part": "第3問",
+   "label": "多数のスリットによる干渉",
+   "difficulty": 4,
+   "principles": [
+    "光の干渉"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理12_光の干渉_問題.pdf の 10番",
+    "q": "gakushuin-2023-core-physics-mondai.pdf p.8〜10",
+    "a": "gakushuin-2023-core-physics-kaitou.pdf p.6〜8"
+   }
+  },
+  {
+   "id": "set-gk24-p-plus-1",
+   "subject": "physics",
+   "unitId": "physics:電磁気:静電場",
+   "year": 2024,
+   "exam": "二次",
+   "school": "学習院大",
+   "part": "第1問",
+   "label": "原子・電子の電荷とクーロン力",
+   "difficulty": 4,
+   "principles": [
+    "静電場"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理06_静電場_問題.pdf の 9番",
+    "q": "gakushuin-2024-plus-physics-mondai.pdf p.5〜6",
+    "a": "gakushuin-2024-plus-physics-kaitou.pdf p.2〜3"
+   }
+  },
+  {
+   "id": "set-gk24-p-plus-2",
+   "subject": "physics",
+   "unitId": "physics:電磁気:コンデンサー",
+   "year": 2024,
+   "exam": "二次",
+   "school": "学習院大",
+   "part": "第2問",
+   "label": "ばねつき極板のコンデンサー",
+   "difficulty": 4,
+   "principles": [
+    "コンデンサー"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理07_コンデンサー_問題.pdf の 10番",
+    "q": "gakushuin-2024-plus-physics-mondai.pdf p.7〜8",
+    "a": "gakushuin-2024-plus-physics-kaitou.pdf p.4〜6"
+   }
+  },
+  {
+   "id": "set-gk25-p-plus-1",
+   "subject": "physics",
+   "unitId": "physics:熱:気体分子運動論",
+   "year": 2025,
+   "exam": "二次",
+   "school": "学習院大",
+   "part": "第1問",
+   "label": "大気圧の測定（論述）",
+   "difficulty": 3,
+   "principles": [
+    "気体分子運動論"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理13_気体分子運動論_問題.pdf の 4番",
+    "q": "gakushuin-2025-plus-physics-mondai.pdf p.4",
+    "a": "gakushuin-2025-plus-physics-kaitou.pdf p.2"
+   }
+  },
+  {
+   "id": "set-gk25-p-plus-2",
+   "subject": "physics",
+   "unitId": "physics:力学:運動方程式",
+   "year": 2025,
+   "exam": "二次",
+   "school": "学習院大",
+   "part": "第2問",
+   "label": "動く斜面台の上の物体（慣性力）",
+   "difficulty": 4,
+   "principles": [
+    "運動方程式"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理02_運動方程式_問題.pdf の 18番",
+    "q": "gakushuin-2025-plus-physics-mondai.pdf p.5〜8",
+    "a": "gakushuin-2025-plus-physics-kaitou.pdf p.3〜5"
+   }
+  },
+  {
+   "id": "set-sk24-p-a-1",
+   "subject": "physics",
+   "unitId": "physics:力学:運動方程式",
+   "year": 2024,
+   "exam": "二次",
+   "school": "成蹊大",
+   "part": "第1問 問1",
+   "label": "棒の力のつりあい（モーメント）",
+   "difficulty": 2,
+   "principles": [
+    "運動方程式"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理02_運動方程式_問題.pdf の 15番",
+    "q": "seikei-2024-a-physics-mondai.pdf p.4",
+    "a": "seikei-2024-a-physics-kaitou.pdf p.2〜4"
+   }
+  },
+  {
+   "id": "set-sk24-p-a-2",
+   "subject": "physics",
+   "unitId": "physics:熱:熱力学第一法則",
+   "year": 2024,
+   "exam": "二次",
+   "school": "成蹊大",
+   "part": "第1問 問2〜4",
+   "label": "ばねの振動グラフ・熱量・気体",
+   "difficulty": 2,
+   "principles": [
+    "熱力学第一法則"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理14_熱力学第一法則_問題.pdf の 23番",
+    "q": "seikei-2024-a-physics-mondai.pdf p.5〜6",
+    "a": "seikei-2024-a-physics-kaitou.pdf p.2〜4"
+   }
+  },
+  {
+   "id": "set-sk24-p-a-3",
+   "subject": "physics",
+   "unitId": "physics:電磁気:静電場",
+   "year": 2024,
+   "exam": "二次",
+   "school": "成蹊大",
+   "part": "第1問 問5",
+   "label": "点電荷のつくる電場",
+   "difficulty": 2,
+   "principles": [
+    "静電場"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理06_静電場_問題.pdf の 7番",
+    "q": "seikei-2024-a-physics-mondai.pdf p.7",
+    "a": "seikei-2024-a-physics-kaitou.pdf p.2〜4"
+   }
+  },
+  {
+   "id": "set-sk24-p-a-4",
+   "subject": "physics",
+   "unitId": "physics:力学:円運動・単振動",
+   "year": 2024,
+   "exam": "二次",
+   "school": "成蹊大",
+   "part": "第2問",
+   "label": "円筒面をすべる小物体",
+   "difficulty": 2,
+   "principles": [
+    "円運動・単振動"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理04_円運動・単振動_問題.pdf の 10番",
+    "q": "seikei-2024-a-physics-mondai.pdf p.8〜9",
+    "a": "seikei-2024-a-physics-kaitou.pdf p.5〜6"
+   }
+  },
+  {
+   "id": "set-sk24-p-a-5",
+   "subject": "physics",
+   "unitId": "physics:原子:光電効果・粒子性",
+   "year": 2024,
+   "exam": "二次",
+   "school": "成蹊大",
+   "part": "第3問 1",
+   "label": "ボーアの水素原子模型",
+   "difficulty": 3,
+   "principles": [
+    "光電効果・粒子性"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理15_光電効果・粒子性_問題.pdf の 4番",
+    "q": "seikei-2024-a-physics-mondai.pdf p.10〜11",
+    "a": "seikei-2024-a-physics-kaitou.pdf p.7〜8"
+   }
+  },
+  {
+   "id": "set-sk24-p-a-6",
+   "subject": "physics",
+   "unitId": "physics:波動:音波・ドップラー",
+   "year": 2024,
+   "exam": "二次",
+   "school": "成蹊大",
+   "part": "第3問 2",
+   "label": "気柱の共鳴（ピストン）",
+   "difficulty": 2,
+   "principles": [
+    "音波・ドップラー"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理11_音波・ドップラー_問題.pdf の 9番",
+    "q": "seikei-2024-a-physics-mondai.pdf p.12〜13",
+    "a": "seikei-2024-a-physics-kaitou.pdf p.7〜8"
+   }
+  },
+  {
+   "id": "set-sk24-p-a-7",
+   "subject": "physics",
+   "unitId": "physics:電磁気:電磁誘導",
+   "year": 2024,
+   "exam": "二次",
+   "school": "成蹊大",
+   "part": "第4問",
+   "label": "コイルを含む回路のスイッチ操作",
+   "difficulty": 3,
+   "principles": [
+    "電磁誘導"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理09_電磁誘導_問題.pdf の 13番",
+    "q": "seikei-2024-a-physics-mondai.pdf p.14〜15",
+    "a": "seikei-2024-a-physics-kaitou.pdf p.9〜10"
+   }
+  },
+  {
+   "id": "set-sk25-p-a-1",
+   "subject": "physics",
+   "unitId": "physics:力学:等加速度運動",
+   "year": 2025,
+   "exam": "二次",
+   "school": "成蹊大",
+   "part": "第1問 問1〜3",
+   "label": "水平投射・等加速度・半減期",
+   "difficulty": 2,
+   "principles": [
+    "等加速度運動"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理01_等加速度運動_問題.pdf の 3番",
+    "q": "seikei-2025-a-physics-mondai.pdf p.4〜5",
+    "a": "seikei-2025-a-physics-kaitou.pdf p.1〜5"
+   }
+  },
+  {
+   "id": "set-sk25-p-a-2",
+   "subject": "physics",
+   "unitId": "physics:電磁気:電磁誘導",
+   "year": 2025,
+   "exam": "二次",
+   "school": "成蹊大",
+   "part": "第1問 問4〜5",
+   "label": "気体の状態変化・コイルの誘導起電力",
+   "difficulty": 2,
+   "principles": [
+    "電磁誘導"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理09_電磁誘導_問題.pdf の 12番",
+    "q": "seikei-2025-a-physics-mondai.pdf p.6〜7",
+    "a": "seikei-2025-a-physics-kaitou.pdf p.1〜5"
+   }
+  },
+  {
+   "id": "set-sk25-p-a-3",
+   "subject": "physics",
+   "unitId": "physics:力学:運動方程式",
+   "year": 2025,
+   "exam": "二次",
+   "school": "成蹊大",
+   "part": "第2問",
+   "label": "加速する電車内の振り子（慣性力）",
+   "difficulty": 3,
+   "principles": [
+    "運動方程式"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理02_運動方程式_問題.pdf の 16番",
+    "q": "seikei-2025-a-physics-mondai.pdf p.8〜10",
+    "a": "seikei-2025-a-physics-kaitou.pdf p.1〜5"
+   }
+  },
+  {
+   "id": "set-sk25-p-a-4",
+   "subject": "physics",
+   "unitId": "physics:電磁気:コンデンサー",
+   "year": 2025,
+   "exam": "二次",
+   "school": "成蹊大",
+   "part": "第3問",
+   "label": "3つのコンデンサーとコイルの回路",
+   "difficulty": 3,
+   "principles": [
+    "コンデンサー"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理07_コンデンサー_問題.pdf の 8番",
+    "q": "seikei-2025-a-physics-mondai.pdf p.12〜13",
+    "a": "seikei-2025-a-physics-kaitou.pdf p.1〜5"
+   }
+  },
+  {
+   "id": "set-sk25-p-a-5",
+   "subject": "physics",
+   "unitId": "physics:波動:光の干渉",
+   "year": 2025,
+   "exam": "二次",
+   "school": "成蹊大",
+   "part": "第4問",
+   "label": "シャボン膜・薄膜の干渉",
+   "difficulty": 2,
+   "principles": [
+    "光の干渉"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理12_光の干渉_問題.pdf の 9番",
+    "q": "seikei-2025-a-physics-mondai.pdf p.14〜17",
+    "a": "seikei-2025-a-physics-kaitou.pdf p.1〜5"
+   }
+  },
+  {
+   "id": "set-nd24-p-n1-1",
+   "subject": "physics",
+   "unitId": "physics:力学:等加速度運動",
+   "year": 2024,
+   "exam": "二次",
+   "school": "日本大",
+   "part": "I",
+   "label": "斜面への斜方投射",
+   "difficulty": 2,
+   "principles": [
+    "等加速度運動"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理01_等加速度運動_問題.pdf の 2番",
+    "q": "nichidai-2024-n1-physics-mondai.pdf p.2〜3",
+    "a": "nichidai-2024-n1-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-nd24-p-n1-2",
+   "subject": "physics",
+   "unitId": "physics:熱:熱力学第一法則",
+   "year": 2024,
+   "exam": "二次",
+   "school": "日本大",
+   "part": "II",
+   "label": "p-Vグラフの熱サイクル",
+   "difficulty": 2,
+   "principles": [
+    "熱力学第一法則"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理14_熱力学第一法則_問題.pdf の 22番",
+    "q": "nichidai-2024-n1-physics-mondai.pdf p.4〜5",
+    "a": "nichidai-2024-n1-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-nd24-p-n1-3",
+   "subject": "physics",
+   "unitId": "physics:波動:光の干渉",
+   "year": 2024,
+   "exam": "二次",
+   "school": "日本大",
+   "part": "III",
+   "label": "マイケルソン干渉計",
+   "difficulty": 2,
+   "principles": [
+    "光の干渉"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理12_光の干渉_問題.pdf の 8番",
+    "q": "nichidai-2024-n1-physics-mondai.pdf p.6〜9",
+    "a": "nichidai-2024-n1-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-nd24-p-n1-4",
+   "subject": "physics",
+   "unitId": "physics:電磁気:静電場",
+   "year": 2024,
+   "exam": "二次",
+   "school": "日本大",
+   "part": "IV",
+   "label": "2つの点電荷のまわりの電場と電位",
+   "difficulty": 2,
+   "principles": [
+    "静電場"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理06_静電場_問題.pdf の 6番",
+    "q": "nichidai-2024-n1-physics-mondai.pdf p.10〜11",
+    "a": "nichidai-2024-n1-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-nd24-p-n1-5",
+   "subject": "physics",
+   "unitId": "physics:原子:光電効果・粒子性",
+   "year": 2024,
+   "exam": "二次",
+   "school": "日本大",
+   "part": "V",
+   "label": "光電効果",
+   "difficulty": 2,
+   "principles": [
+    "光電効果・粒子性"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理15_光電効果・粒子性_問題.pdf の 3番",
+    "q": "nichidai-2024-n1-physics-mondai.pdf p.12〜15",
+    "a": "nichidai-2024-n1-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-nd25-p-n1-1",
+   "subject": "physics",
+   "unitId": "physics:力学:運動量と力積",
+   "year": 2025,
+   "exam": "二次",
+   "school": "日本大",
+   "part": "I",
+   "label": "壁と小球の衝突",
+   "difficulty": 2,
+   "principles": [
+    "運動量と力積"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理03_運動量と力積_問題.pdf の 12番",
+    "q": "nichidai-2025-n1-physics-mondai.pdf p.3〜5",
+    "a": "nichidai-2025-n1-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-nd25-p-n1-2",
+   "subject": "physics",
+   "unitId": "physics:熱:熱力学第一法則",
+   "year": 2025,
+   "exam": "二次",
+   "school": "日本大",
+   "part": "II",
+   "label": "2つの容器の気体",
+   "difficulty": 2,
+   "principles": [
+    "熱力学第一法則"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理14_熱力学第一法則_問題.pdf の 21番",
+    "q": "nichidai-2025-n1-physics-mondai.pdf p.6〜7",
+    "a": "nichidai-2025-n1-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-nd25-p-n1-3",
+   "subject": "physics",
+   "unitId": "physics:波動:光の干渉",
+   "year": 2025,
+   "exam": "二次",
+   "school": "日本大",
+   "part": "III",
+   "label": "ニュートンリング",
+   "difficulty": 2,
+   "principles": [
+    "光の干渉"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理12_光の干渉_問題.pdf の 7番",
+    "q": "nichidai-2025-n1-physics-mondai.pdf p.8〜10",
+    "a": "nichidai-2025-n1-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-nd25-p-n1-4",
+   "subject": "physics",
+   "unitId": "physics:電磁気:電磁誘導",
+   "year": 2025,
+   "exam": "二次",
+   "school": "日本大",
+   "part": "IV",
+   "label": "導体棒とコンデンサー",
+   "difficulty": 2,
+   "principles": [
+    "電磁誘導"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理09_電磁誘導_問題.pdf の 11番",
+    "q": "nichidai-2025-n1-physics-mondai.pdf p.12〜14",
+    "a": "nichidai-2025-n1-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-nd25-p-n1-5",
+   "subject": "physics",
+   "unitId": "physics:原子:原子核",
+   "year": 2025,
+   "exam": "二次",
+   "school": "日本大",
+   "part": "V",
+   "label": "原子核の崩壊",
+   "difficulty": 2,
+   "principles": [
+    "原子核"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理16_原子核_問題.pdf の 2番",
+    "q": "nichidai-2025-n1-physics-mondai.pdf p.16〜17",
+    "a": "nichidai-2025-n1-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-nd26-p-n1-1",
+   "subject": "physics",
+   "unitId": "physics:力学:円運動・単振動",
+   "year": 2026,
+   "exam": "二次",
+   "school": "日本大",
+   "part": "I",
+   "label": "斜面上のばねと小球",
+   "difficulty": 2,
+   "principles": [
+    "円運動・単振動"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理04_円運動・単振動_問題.pdf の 9番",
+    "q": "nichidai-2026-n1-physics-mondai.pdf p.4〜5",
+    "a": "nichidai-2026-n1-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-nd26-p-n1-2",
+   "subject": "physics",
+   "unitId": "physics:熱:熱力学第一法則",
+   "year": 2026,
+   "exam": "二次",
+   "school": "日本大",
+   "part": "II",
+   "label": "シリンダー内の気体",
+   "difficulty": 2,
+   "principles": [
+    "熱力学第一法則"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理14_熱力学第一法則_問題.pdf の 20番",
+    "q": "nichidai-2026-n1-physics-mondai.pdf p.6〜8",
+    "a": "nichidai-2026-n1-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-nd26-p-n1-3",
+   "subject": "physics",
+   "unitId": "physics:波動:波の性質",
+   "year": 2026,
+   "exam": "二次",
+   "school": "日本大",
+   "part": "III",
+   "label": "反射波と定常波",
+   "difficulty": 2,
+   "principles": [
+    "波の性質"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理10_波の性質_問題.pdf の 6番",
+    "q": "nichidai-2026-n1-physics-mondai.pdf p.10〜12",
+    "a": "nichidai-2026-n1-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-nd26-p-n1-4",
+   "subject": "physics",
+   "unitId": "physics:電磁気:直流回路",
+   "year": 2026,
+   "exam": "二次",
+   "school": "日本大",
+   "part": "IV",
+   "label": "ダイオードを含む直流回路",
+   "difficulty": 2,
+   "principles": [
+    "直流回路"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理08_直流回路_問題.pdf の 10番",
+    "q": "nichidai-2026-n1-physics-mondai.pdf p.14〜15",
+    "a": "nichidai-2026-n1-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-nd26-p-n1-5",
+   "subject": "physics",
+   "unitId": "physics:原子:光電効果・粒子性",
+   "year": 2026,
+   "exam": "二次",
+   "school": "日本大",
+   "part": "V",
+   "label": "ボーアの水素原子模型",
+   "difficulty": 2,
+   "principles": [
+    "光電効果・粒子性"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理15_光電効果・粒子性_問題.pdf の 2番",
+    "q": "nichidai-2026-n1-physics-mondai.pdf p.16〜17",
+    "a": "nichidai-2026-n1-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rk24-p-b-souiki-kenchiku-1",
+   "subject": "physics",
+   "unitId": "physics:力学:運動量と力積",
+   "year": 2024,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・建築 [1]",
+   "label": "円板どうしの衝突",
+   "difficulty": 4,
+   "principles": [
+    "運動量と力積"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理03_運動量と力積_問題.pdf の 16番",
+    "q": "rikadai-2024-b-souiki-kenchiku-physics-mondai.pdf p.4〜11",
+    "a": "rikadai-2024-b-souiki-kenchiku-physics-kaitou.pdf p.2〜4"
+   }
+  },
+  {
+   "id": "set-rk24-p-b-souiki-kenchiku-2",
+   "subject": "physics",
+   "unitId": "physics:電磁気:電磁誘導",
+   "year": 2024,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・建築 [2]",
+   "label": "回転する扇形コイルと磁石",
+   "difficulty": 4,
+   "principles": [
+    "電磁誘導"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理09_電磁誘導_問題.pdf の 23番",
+    "q": "rikadai-2024-b-souiki-kenchiku-physics-mondai.pdf p.12〜21",
+    "a": "rikadai-2024-b-souiki-kenchiku-physics-kaitou.pdf p.5〜7"
+   }
+  },
+  {
+   "id": "set-rk24-p-b-souiki-kenchiku-3",
+   "subject": "physics",
+   "unitId": "physics:波動:光の干渉",
+   "year": 2024,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・建築 [3]",
+   "label": "光の屈折と見かけの位置",
+   "difficulty": 4,
+   "principles": [
+    "光の干渉"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理12_光の干渉_問題.pdf の 11番",
+    "q": "rikadai-2024-b-souiki-kenchiku-physics-mondai.pdf p.22〜30",
+    "a": "rikadai-2024-b-souiki-kenchiku-physics-kaitou.pdf p.8〜10"
+   }
+  },
+  {
+   "id": "set-rk24-p-b-souiki-suuri-1",
+   "subject": "physics",
+   "unitId": "physics:力学:運動量と力積",
+   "year": 2024,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・数理 [1]",
+   "label": "気球から放した小球・ばねでの衝突",
+   "difficulty": 4,
+   "principles": [
+    "運動量と力積"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理03_運動量と力積_問題.pdf の 17番",
+    "q": "rikadai-2024-b-souiki-suuri-physics-mondai.pdf p.4〜11",
+    "a": "rikadai-2024-b-souiki-suuri-physics-kaitou.pdf p.2〜5"
+   }
+  },
+  {
+   "id": "set-rk24-p-b-souiki-suuri-2",
+   "subject": "physics",
+   "unitId": "physics:電磁気:静電場",
+   "year": 2024,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・数理 [2]",
+   "label": "点電荷のまわりの電場と電位",
+   "difficulty": 4,
+   "principles": [
+    "静電場"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理06_静電場_問題.pdf の 10番",
+    "q": "rikadai-2024-b-souiki-suuri-physics-mondai.pdf p.12〜23",
+    "a": "rikadai-2024-b-souiki-suuri-physics-kaitou.pdf p.6〜7"
+   }
+  },
+  {
+   "id": "set-rk24-p-b-souiki-suuri-3",
+   "subject": "physics",
+   "unitId": "physics:波動:波の性質",
+   "year": 2024,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・数理 [3]",
+   "label": "波の反射と定常波",
+   "difficulty": 4,
+   "principles": [
+    "波の性質"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理10_波の性質_問題.pdf の 9番",
+    "q": "rikadai-2024-b-souiki-suuri-physics-mondai.pdf p.24〜29",
+    "a": "rikadai-2024-b-souiki-suuri-physics-kaitou.pdf p.7〜8"
+   }
+  },
+  {
+   "id": "set-rk25-p-b-kougaku-1",
+   "subject": "physics",
+   "unitId": "physics:力学:運動量と力積",
+   "year": 2025,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "工学部 [1]",
+   "label": "台の上をすべる小物体",
+   "difficulty": 4,
+   "principles": [
+    "運動量と力積"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理03_運動量と力積_問題.pdf の 15番",
+    "q": "rikadai-2025-b-kougaku-physics-mondai.pdf p.4〜9",
+    "a": "rikadai-2025-b-kougaku-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rk25-p-b-kougaku-2",
+   "subject": "physics",
+   "unitId": "physics:電磁気:電磁誘導",
+   "year": 2025,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "工学部 [2]",
+   "label": "磁場を横切るコイル",
+   "difficulty": 4,
+   "principles": [
+    "電磁誘導"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理09_電磁誘導_問題.pdf の 22番",
+    "q": "rikadai-2025-b-kougaku-physics-mondai.pdf p.12〜19",
+    "a": "rikadai-2025-b-kougaku-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rk25-p-b-kougaku-3",
+   "subject": "physics",
+   "unitId": "physics:波動:音波・ドップラー",
+   "year": 2025,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "工学部 [3]",
+   "label": "ドップラー効果",
+   "difficulty": 4,
+   "principles": [
+    "音波・ドップラー"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理11_音波・ドップラー_問題.pdf の 13番",
+    "q": "rikadai-2025-b-kougaku-physics-mondai.pdf p.22〜30",
+    "a": "rikadai-2025-b-kougaku-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rk25-p-b-souiki-kenchiku-1",
+   "subject": "physics",
+   "unitId": "physics:力学:運動量と力積",
+   "year": 2025,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・建築 [1]",
+   "label": "動く台の上の小物体",
+   "difficulty": 4,
+   "principles": [
+    "運動量と力積"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理03_運動量と力積_問題.pdf の 14番",
+    "q": "rikadai-2025-b-souiki-kenchiku-physics-mondai.pdf p.4〜13",
+    "a": "rikadai-2025-b-souiki-kenchiku-physics-kaitou.pdf p.1"
+   }
+  },
+  {
+   "id": "set-rk25-p-b-souiki-kenchiku-2",
+   "subject": "physics",
+   "unitId": "physics:電磁気:コンデンサー",
+   "year": 2025,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・建築 [2]",
+   "label": "金属板を入れたコンデンサー",
+   "difficulty": 4,
+   "principles": [
+    "コンデンサー"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理07_コンデンサー_問題.pdf の 11番",
+    "q": "rikadai-2025-b-souiki-kenchiku-physics-mondai.pdf p.14〜23",
+    "a": "rikadai-2025-b-souiki-kenchiku-physics-kaitou.pdf p.1"
+   }
+  },
+  {
+   "id": "set-rk25-p-b-souiki-kenchiku-3",
+   "subject": "physics",
+   "unitId": "physics:熱:熱力学第一法則",
+   "year": 2025,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・建築 [3]",
+   "label": "ピストンつきシリンダーの気体",
+   "difficulty": 4,
+   "principles": [
+    "熱力学第一法則"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理14_熱力学第一法則_問題.pdf の 29番",
+    "q": "rikadai-2025-b-souiki-kenchiku-physics-mondai.pdf p.24〜30",
+    "a": "rikadai-2025-b-souiki-kenchiku-physics-kaitou.pdf p.1"
+   }
+  },
+  {
+   "id": "set-rk25-p-b-souiki-suuri-1",
+   "subject": "physics",
+   "unitId": "physics:力学:円運動・単振動",
+   "year": 2025,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・数理 [1]",
+   "label": "ばねと2物体の単振動・衝突",
+   "difficulty": 4,
+   "principles": [
+    "円運動・単振動"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理04_円運動・単振動_問題.pdf の 15番",
+    "q": "rikadai-2025-b-souiki-suuri-physics-mondai.pdf p.4〜13",
+    "a": "rikadai-2025-b-souiki-suuri-physics-kaitou.pdf p.1"
+   }
+  },
+  {
+   "id": "set-rk25-p-b-souiki-suuri-2",
+   "subject": "physics",
+   "unitId": "physics:電磁気:電磁誘導",
+   "year": 2025,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・数理 [2]",
+   "label": "コイルを含む回路の過渡現象",
+   "difficulty": 4,
+   "principles": [
+    "電磁誘導"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理09_電磁誘導_問題.pdf の 21番",
+    "q": "rikadai-2025-b-souiki-suuri-physics-mondai.pdf p.14〜21",
+    "a": "rikadai-2025-b-souiki-suuri-physics-kaitou.pdf p.1"
+   }
+  },
+  {
+   "id": "set-rk25-p-b-souiki-suuri-3",
+   "subject": "physics",
+   "unitId": "physics:原子:原子核",
+   "year": 2025,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・数理 [3]",
+   "label": "原子核と放射性崩壊",
+   "difficulty": 4,
+   "principles": [
+    "原子核"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理16_原子核_問題.pdf の 5番",
+    "q": "rikadai-2025-b-souiki-suuri-physics-mondai.pdf p.22〜26",
+    "a": "rikadai-2025-b-souiki-suuri-physics-kaitou.pdf p.1"
+   }
+  },
+  {
+   "id": "set-rk26-p-b-kougaku-1",
+   "subject": "physics",
+   "unitId": "physics:力学:円運動・単振動",
+   "year": 2026,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "工学部 [1]",
+   "label": "回転する棒の上の小物体（円運動）",
+   "difficulty": 4,
+   "principles": [
+    "円運動・単振動"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理04_円運動・単振動_問題.pdf の 14番",
+    "q": "rikadai-2026-b-kougaku-physics-mondai.pdf p.4〜11",
+    "a": "rikadai-2026-b-kougaku-physics-kaitou.pdf p.1"
+   }
+  },
+  {
+   "id": "set-rk26-p-b-kougaku-2",
+   "subject": "physics",
+   "unitId": "physics:電磁気:交流",
+   "year": 2026,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "工学部 [2]",
+   "label": "交流回路とベクトル図",
+   "difficulty": 4,
+   "principles": [
+    "交流"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理09b_交流_問題.pdf の 2番",
+    "q": "rikadai-2026-b-kougaku-physics-mondai.pdf p.12〜23",
+    "a": "rikadai-2026-b-kougaku-physics-kaitou.pdf p.1"
+   }
+  },
+  {
+   "id": "set-rk26-p-b-kougaku-3",
+   "subject": "physics",
+   "unitId": "physics:波動:波の性質",
+   "year": 2026,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "工学部 [3]",
+   "label": "波の式と観測",
+   "difficulty": 4,
+   "principles": [
+    "波の性質"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理10_波の性質_問題.pdf の 8番",
+    "q": "rikadai-2026-b-kougaku-physics-mondai.pdf p.24〜30",
+    "a": "rikadai-2026-b-kougaku-physics-kaitou.pdf p.1"
+   }
+  },
+  {
+   "id": "set-rk26-p-b-souiki-kenchiku-1",
+   "subject": "physics",
+   "unitId": "physics:力学:万有引力",
+   "year": 2026,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・建築 [1]",
+   "label": "天体を貫くトンネル",
+   "difficulty": 4,
+   "principles": [
+    "万有引力"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理05_万有引力_問題.pdf の 6番",
+    "q": "rikadai-2026-b-souiki-kenchiku-physics-mondai.pdf p.4〜13",
+    "a": "rikadai-2026-b-souiki-kenchiku-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rk26-p-b-souiki-kenchiku-2",
+   "subject": "physics",
+   "unitId": "physics:電磁気:電磁誘導",
+   "year": 2026,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・建築 [2]",
+   "label": "磁場中を動く台車の回路",
+   "difficulty": 4,
+   "principles": [
+    "電磁誘導"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理09_電磁誘導_問題.pdf の 19番",
+    "q": "rikadai-2026-b-souiki-kenchiku-physics-mondai.pdf p.14〜21",
+    "a": "rikadai-2026-b-souiki-kenchiku-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rk26-p-b-souiki-kenchiku-3",
+   "subject": "physics",
+   "unitId": "physics:熱:熱力学第一法則",
+   "year": 2026,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・建築 [3]",
+   "label": "熱気球の浮力と気体",
+   "difficulty": 4,
+   "principles": [
+    "熱力学第一法則"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理14_熱力学第一法則_問題.pdf の 27番",
+    "q": "rikadai-2026-b-souiki-kenchiku-physics-mondai.pdf p.22〜29",
+    "a": "rikadai-2026-b-souiki-kenchiku-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rk26-p-b-souiki-suuri-1",
+   "subject": "physics",
+   "unitId": "physics:力学:等加速度運動",
+   "year": 2026,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・数理 [1]",
+   "label": "花火の放物運動",
+   "difficulty": 4,
+   "principles": [
+    "等加速度運動"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理01_等加速度運動_問題.pdf の 4番",
+    "q": "rikadai-2026-b-souiki-suuri-physics-mondai.pdf p.4〜13",
+    "a": "rikadai-2026-b-souiki-suuri-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rk26-p-b-souiki-suuri-2",
+   "subject": "physics",
+   "unitId": "physics:電磁気:電磁誘導",
+   "year": 2026,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・数理 [2]",
+   "label": "磁場中の電子の円運動",
+   "difficulty": 4,
+   "principles": [
+    "電磁誘導"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理09_電磁誘導_問題.pdf の 20番",
+    "q": "rikadai-2026-b-souiki-suuri-physics-mondai.pdf p.14〜21",
+    "a": "rikadai-2026-b-souiki-suuri-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rk26-p-b-souiki-suuri-3",
+   "subject": "physics",
+   "unitId": "physics:熱:熱力学第一法則",
+   "year": 2026,
+   "exam": "二次",
+   "school": "東京理科大",
+   "part": "創域理工・数理 [3]",
+   "label": "3つの部屋の気体",
+   "difficulty": 4,
+   "principles": [
+    "熱力学第一法則"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理14_熱力学第一法則_問題.pdf の 28番",
+    "q": "rikadai-2026-b-souiki-suuri-physics-mondai.pdf p.22〜31",
+    "a": "rikadai-2026-b-souiki-suuri-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rkk23-p-0209-1",
+   "subject": "physics",
+   "unitId": "physics:力学:万有引力",
+   "year": 2023,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "I",
+   "label": "人工衛星と第二宇宙速度",
+   "difficulty": 3,
+   "principles": [
+    "万有引力"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理05_万有引力_問題.pdf の 5番",
+    "q": "rikkyo-2023-0209-physics-mondai.pdf p.2",
+    "a": "rikkyo-2023-0209-physics-kaitou.pdf p.2"
+   }
+  },
+  {
+   "id": "set-rkk23-p-0209-2",
+   "subject": "physics",
+   "unitId": "physics:波動:波の性質",
+   "year": 2023,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "II",
+   "label": "進行波と定常波",
+   "difficulty": 3,
+   "principles": [
+    "波の性質"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理10_波の性質_問題.pdf の 7番",
+    "q": "rikkyo-2023-0209-physics-mondai.pdf p.4〜5",
+    "a": "rikkyo-2023-0209-physics-kaitou.pdf p.3"
+   }
+  },
+  {
+   "id": "set-rkk23-p-0209-3",
+   "subject": "physics",
+   "unitId": "physics:力学:運動量と力積",
+   "year": 2023,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "III",
+   "label": "並んだ物体の連続衝突",
+   "difficulty": 3,
+   "principles": [
+    "運動量と力積"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理03_運動量と力積_問題.pdf の 13番",
+    "q": "rikkyo-2023-0209-physics-mondai.pdf p.6〜7",
+    "a": "rikkyo-2023-0209-physics-kaitou.pdf p.4"
+   }
+  },
+  {
+   "id": "set-rkk23-p-0209-4",
+   "subject": "physics",
+   "unitId": "physics:原子:原子核",
+   "year": 2023,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "IV",
+   "label": "太陽のエネルギーと核融合",
+   "difficulty": 3,
+   "principles": [
+    "原子核"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理16_原子核_問題.pdf の 4番",
+    "q": "rikkyo-2023-0209-physics-mondai.pdf p.8",
+    "a": "rikkyo-2023-0209-physics-kaitou.pdf p.5"
+   }
+  },
+  {
+   "id": "set-rkk23-p-0209-5",
+   "subject": "physics",
+   "unitId": "physics:電磁気:電磁誘導",
+   "year": 2023,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "V",
+   "label": "回転する導体棒",
+   "difficulty": 3,
+   "principles": [
+    "電磁誘導"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理09_電磁誘導_問題.pdf の 17番",
+    "q": "rikkyo-2023-0209-physics-mondai.pdf p.10〜11",
+    "a": "rikkyo-2023-0209-physics-kaitou.pdf p.5〜6"
+   }
+  },
+  {
+   "id": "set-rkk23-p-0209-6",
+   "subject": "physics",
+   "unitId": "physics:熱:熱力学第一法則",
+   "year": 2023,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "VI",
+   "label": "気体の熱サイクルと熱効率",
+   "difficulty": 3,
+   "principles": [
+    "熱力学第一法則"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理14_熱力学第一法則_問題.pdf の 26番",
+    "q": "rikkyo-2023-0209-physics-mondai.pdf p.12〜13",
+    "a": "rikkyo-2023-0209-physics-kaitou.pdf p.7〜8"
+   }
+  },
+  {
+   "id": "set-rkk24-p-0209-1",
+   "subject": "physics",
+   "unitId": "physics:力学:円運動・単振動",
+   "year": 2024,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "I",
+   "label": "斜面上のばねと2物体",
+   "difficulty": 3,
+   "principles": [
+    "円運動・単振動"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理04_円運動・単振動_問題.pdf の 12番",
+    "q": "rikkyo-2024-0209-physics-mondai.pdf p.2",
+    "a": "rikkyo-2024-0209-physics-kaitou.pdf p.2〜3"
+   }
+  },
+  {
+   "id": "set-rkk24-p-0209-2",
+   "subject": "physics",
+   "unitId": "physics:熱:熱力学第一法則",
+   "year": 2024,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "II",
+   "label": "断熱容器の気体とおもり",
+   "difficulty": 3,
+   "principles": [
+    "熱力学第一法則"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理14_熱力学第一法則_問題.pdf の 25番",
+    "q": "rikkyo-2024-0209-physics-mondai.pdf p.4〜5",
+    "a": "rikkyo-2024-0209-physics-kaitou.pdf p.4〜5"
+   }
+  },
+  {
+   "id": "set-rkk24-p-0209-3",
+   "subject": "physics",
+   "unitId": "physics:原子:光電効果・粒子性",
+   "year": 2024,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "III",
+   "label": "X線と結晶（ブラッグ反射）",
+   "difficulty": 3,
+   "principles": [
+    "光電効果・粒子性"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理15_光電効果・粒子性_問題.pdf の 6番",
+    "q": "rikkyo-2024-0209-physics-mondai.pdf p.6〜7",
+    "a": "rikkyo-2024-0209-physics-kaitou.pdf p.6〜7"
+   }
+  },
+  {
+   "id": "set-rkk24-p-0209-4",
+   "subject": "physics",
+   "unitId": "physics:電磁気:コンデンサー",
+   "year": 2024,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "IV",
+   "label": "コンデンサーと抵抗の回路",
+   "difficulty": 3,
+   "principles": [
+    "コンデンサー"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理07_コンデンサー_問題.pdf の 9番",
+    "q": "rikkyo-2024-0209-physics-mondai.pdf p.8",
+    "a": "rikkyo-2024-0209-physics-kaitou.pdf p.8"
+   }
+  },
+  {
+   "id": "set-rkk24-p-0209-5",
+   "subject": "physics",
+   "unitId": "physics:電磁気:電磁誘導",
+   "year": 2024,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "V",
+   "label": "磁場中の荷電粒子の運動",
+   "difficulty": 3,
+   "principles": [
+    "電磁誘導"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理09_電磁誘導_問題.pdf の 16番",
+    "q": "rikkyo-2024-0209-physics-mondai.pdf p.10〜11",
+    "a": "rikkyo-2024-0209-physics-kaitou.pdf p.9〜11"
+   }
+  },
+  {
+   "id": "set-rkk24-p-0209-6",
+   "subject": "physics",
+   "unitId": "physics:波動:音波・ドップラー",
+   "year": 2024,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "VI",
+   "label": "ドップラー効果",
+   "difficulty": 3,
+   "principles": [
+    "音波・ドップラー"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理11_音波・ドップラー_問題.pdf の 12番",
+    "q": "rikkyo-2024-0209-physics-mondai.pdf p.12〜13",
+    "a": "rikkyo-2024-0209-physics-kaitou.pdf p.12〜13"
+   }
+  },
+  {
+   "id": "set-rkk25-p-0209-1",
+   "subject": "physics",
+   "unitId": "physics:力学:運動方程式",
+   "year": 2025,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "I",
+   "label": "摩擦係数の測定",
+   "difficulty": 3,
+   "principles": [
+    "運動方程式"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理02_運動方程式_問題.pdf の 17番",
+    "q": "rikkyo-2025-0209-physics-mondai.pdf p.2〜3",
+    "a": "rikkyo-2025-0209-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rkk25-p-0209-2",
+   "subject": "physics",
+   "unitId": "physics:電磁気:電磁誘導",
+   "year": 2025,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "II",
+   "label": "抵抗力・磁場に入るコイル",
+   "difficulty": 3,
+   "principles": [
+    "電磁誘導"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理09_電磁誘導_問題.pdf の 15番",
+    "q": "rikkyo-2025-0209-physics-mondai.pdf p.4〜5",
+    "a": "rikkyo-2025-0209-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rkk25-p-0209-3",
+   "subject": "physics",
+   "unitId": "physics:熱:熱力学第一法則",
+   "year": 2025,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "III",
+   "label": "気球の中の気体",
+   "difficulty": 3,
+   "principles": [
+    "熱力学第一法則"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理14_熱力学第一法則_問題.pdf の 24番",
+    "q": "rikkyo-2025-0209-physics-mondai.pdf p.6〜8",
+    "a": "rikkyo-2025-0209-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rkk25-p-0209-4",
+   "subject": "physics",
+   "unitId": "physics:電磁気:交流",
+   "year": 2025,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "IV",
+   "label": "コンデンサーとコイルの電気振動",
+   "difficulty": 3,
+   "principles": [
+    "交流"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理09b_交流_問題.pdf の 1番",
+    "q": "rikkyo-2025-0209-physics-mondai.pdf p.10〜12",
+    "a": "rikkyo-2025-0209-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rkk25-p-0209-5",
+   "subject": "physics",
+   "unitId": "physics:原子:原子核",
+   "year": 2025,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "V",
+   "label": "原子核の崩壊と半減期",
+   "difficulty": 3,
+   "principles": [
+    "原子核"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理16_原子核_問題.pdf の 3番",
+    "q": "rikkyo-2025-0209-physics-mondai.pdf p.14〜15",
+    "a": "rikkyo-2025-0209-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rkk25-p-0209-6",
+   "subject": "physics",
+   "unitId": "physics:波動:音波・ドップラー",
+   "year": 2025,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "VI",
+   "label": "動く音源とうなり",
+   "difficulty": 3,
+   "principles": [
+    "音波・ドップラー"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理11_音波・ドップラー_問題.pdf の 11番",
+    "q": "rikkyo-2025-0209-physics-mondai.pdf p.16",
+    "a": "rikkyo-2025-0209-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rkk26-p-0209-1",
+   "subject": "physics",
+   "unitId": "physics:力学:円運動・単振動",
+   "year": 2026,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "I",
+   "label": "ばねでつながれた2物体の振動",
+   "difficulty": 3,
+   "principles": [
+    "円運動・単振動"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理04_円運動・単振動_問題.pdf の 11番",
+    "q": "rikkyo-2026-0209-physics-mondai.pdf p.2〜3",
+    "a": "rikkyo-2026-0209-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rkk26-p-0209-2",
+   "subject": "physics",
+   "unitId": "physics:原子:光電効果・粒子性",
+   "year": 2026,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "II",
+   "label": "コンプトン効果",
+   "difficulty": 3,
+   "principles": [
+    "光電効果・粒子性"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理15_光電効果・粒子性_問題.pdf の 5番",
+    "q": "rikkyo-2026-0209-physics-mondai.pdf p.4",
+    "a": "rikkyo-2026-0209-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rkk26-p-0209-3",
+   "subject": "physics",
+   "unitId": "physics:電磁気:電磁誘導",
+   "year": 2026,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "III",
+   "label": "斜面レール上の導体棒",
+   "difficulty": 3,
+   "principles": [
+    "電磁誘導"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理09_電磁誘導_問題.pdf の 14番",
+    "q": "rikkyo-2026-0209-physics-mondai.pdf p.6〜7",
+    "a": "rikkyo-2026-0209-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rkk26-p-0209-4",
+   "subject": "physics",
+   "unitId": "physics:波動:音波・ドップラー",
+   "year": 2026,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "IV",
+   "label": "円運動する音源のドップラー効果",
+   "difficulty": 3,
+   "principles": [
+    "音波・ドップラー"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理11_音波・ドップラー_問題.pdf の 10番",
+    "q": "rikkyo-2026-0209-physics-mondai.pdf p.8〜9",
+    "a": "rikkyo-2026-0209-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rkk26-p-0209-5",
+   "subject": "physics",
+   "unitId": "physics:熱:気体分子運動論",
+   "year": 2026,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "V",
+   "label": "気体分子運動論",
+   "difficulty": 3,
+   "principles": [
+    "気体分子運動論"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理13_気体分子運動論_問題.pdf の 3番",
+    "q": "rikkyo-2026-0209-physics-mondai.pdf p.10〜11",
+    "a": "rikkyo-2026-0209-physics-kaitou.pdf p.1〜2"
+   }
+  },
+  {
+   "id": "set-rkk26-p-0209-6",
+   "subject": "physics",
+   "unitId": "physics:電磁気:静電場",
+   "year": 2026,
+   "exam": "二次",
+   "school": "立教大",
+   "part": "VI",
+   "label": "点電荷のまわりの運動",
+   "difficulty": 3,
+   "principles": [
+    "静電場"
+   ],
+   "insight": "",
+   "note": "類題（他大学）",
+   "src": {
+    "print": "物理06_静電場_問題.pdf の 8番",
+    "q": "rikkyo-2026-0209-physics-mondai.pdf p.12",
+    "a": "rikkyo-2026-0209-physics-kaitou.pdf p.1〜2"
+   }
+  }
+ ],
+ "updates": []
+}
