@@ -1077,7 +1077,11 @@ window.addEventListener("hashchange", addFromLink);
 // "add" files only append problems that are not in the stock yet, and "updates" only fill in
 // what is still empty (a solved date on an unsolved problem, or a unit the user has not changed).
 // Nothing already saved is removed or overwritten.
-const solvedTime = (d) => { const t = new Date(`${d}T12:00:00`).getTime(); return Number.isFinite(t) && t <= Date.now() ? t : null; };
+const solvedTime = (d) => {
+  const t = new Date(`${d}T12:00:00`).getTime();
+  if (!Number.isFinite(t) || dayStart(t) > dayStart(Date.now())) return null;
+  return Math.min(t, Date.now());
+};
 function addProblems(list, updates = []) {
   const key = (p) => [p.subject, p.year, p.school, p.part].map((x) => String(x ?? "").replace(/\s+/g, "")).join("|");
   const ids = new Set(S.problems.map((p) => p.id));
@@ -1110,6 +1114,7 @@ function addProblems(list, updates = []) {
     }
     const at = u.solvedAt ? solvedTime(u.solvedAt) : null;
     if (at && !p.step1) Object.assign(patch, { step1: true, step1At: at, reviewStage: 0 });
+    if (u.addNote && !String(p.note ?? "").includes(u.addNote)) patch.note = [p.note, u.addNote].filter(Boolean).join("\n");
     if (Object.keys(patch).length) patches.set(p.id, patch);
   }
   const solvedN = fresh.filter((p) => p.step1).length + [...patches.values()].filter((x) => x.step1).length;
@@ -1119,6 +1124,8 @@ function addProblems(list, updates = []) {
   if (fresh.length) lines.push(`・${fresh.length}問を追加`);
   if (solvedN) lines.push(`・${solvedN}問を「自力で解けた」にする（解いた日つき）`);
   if (unitN) lines.push(`・${unitN}問の単元を直す`);
+  const noteN = [...patches.values()].filter((x) => x.note).length;
+  if (noteN) lines.push(`・${noteN}問の結果メモに追記`);
   if (!confirm(`次の内容を入れますか？\n${lines.join("\n")}\n今の記録はそのまま残ります。`)) return;
   S.problems = [...S.problems.map((p) => (patches.has(p.id) ? { ...p, ...patches.get(p.id), updatedAt: Date.now() } : p)), ...fresh];
   S.log = [logEntry(lines.map((x) => x.slice(1)).join("・")), ...S.log].slice(0, 50);
