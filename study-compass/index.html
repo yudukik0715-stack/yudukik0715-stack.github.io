@@ -485,6 +485,23 @@ S.problems = S.problems.map((p) => {
   const to = migrateUnit(p.unitId);
   return to === p.unitId ? p : { ...p, unitId: to, unitWas: p.unitWas ?? p.unitId };
 });
+// The 解法の型 field used to split on 、 and , too, so "a、b、cの式" became "a" / "b" / "c…".
+// Items of one or two letters can only come from that, so join them back with their neighbours.
+function joinSplitPrinciples(list) {
+  const out = [];
+  let glue = false;
+  for (const t of list) {
+    const short = /^[A-Za-z0-9ａ-ｚＡ-Ｚ０-９]{1,2}$/.test(t);
+    if ((short || glue) && out.length) out[out.length - 1] += `、${t}`;
+    else out.push(t);
+    glue = short;
+  }
+  return out;
+}
+S.problems = S.problems.map((p) => {
+  if (!Array.isArray(p.principles) || !p.principles.some((t) => /^[A-Za-z0-9ａ-ｚＡ-Ｚ０-９]{1,2}$/.test(t))) return p;
+  return { ...p, principles: joinSplitPrinciples(p.principles) };
+});
 S.reflections = S.reflections ?? [];
 S.lastReflect = S.lastReflect ?? Date.now();
 
@@ -988,7 +1005,7 @@ function saveProblem() {
     year: Number(g("year")), exam: g("exam"), school: g("school"), part: g("part"),
     label: g("label").trim() || unit?.name || "",
     difficulty: Number(g("difficulty")),
-    principles: g("principles").split(/\n|、|,/).map((x) => x.trim()).filter(Boolean),
+    principles: g("principles").split(/\n/).map((x) => x.trim()).filter(Boolean),
     insight: g("insight"),
     note: g("note").trim(),
     refs: g("refs").split("\n").map((l) => l.split("|").map((x) => x.trim())).filter((x) => x[0])
