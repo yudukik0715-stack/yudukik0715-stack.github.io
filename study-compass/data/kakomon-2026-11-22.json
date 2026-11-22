@@ -367,12 +367,12 @@
   {
    "id": "imp-023",
    "subject": "math",
-   "unitId": "math:数A:場合の数",
+   "unitId": "math:数I:集合と論証",
    "year": 2026,
    "exam": "二次",
    "school": "神奈川大 2/8",
    "part": "①(2)",
-   "label": "補集合で数える",
+   "label": "集合（和集合・補集合）",
    "difficulty": 2,
    "principles": [
     "「〜でない」は全体から引く"
@@ -449,12 +449,12 @@
   {
    "id": "imp-028",
    "subject": "math",
-   "unitId": "math:数II:指数・対数関数",
+   "unitId": "math:数III 微分・積分:極限と関数の連続性",
    "year": 2026,
    "exam": "二次",
    "school": "神奈川大 2/8",
    "part": "③",
-   "label": "対数",
+   "label": "極限 n(2^(1/n)−1)",
    "difficulty": 3,
    "principles": [],
    "insight": "",
