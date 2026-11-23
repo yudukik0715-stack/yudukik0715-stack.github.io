@@ -123,6 +123,7 @@ main { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 24px; 
 .set-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 0; }
 .set-row .set-t { flex: 1 1 220px; display: flex; gap: 10px; align-items: flex-start; text-align: left; padding: 4px 0; min-width: 0; }
 .set-row .num { flex: none; width: 22px; height: 22px; border-radius: 999px; border: 1px solid var(--border); display: grid; place-items: center; font-size: 11px; }
+.set-row .set-memo { flex: 1 1 100%; min-height: 36px; font-size: 14px; resize: vertical; }
 .res-btns { display: flex; gap: 6px; margin-left: auto; }
 .res-btns button { border: 1px solid var(--border); border-radius: 999px; padding: 0 12px; height: 30px; line-height: 1; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; min-width: 44px; flex: none; width: auto; }
 .res-btns button.on.r-o { background: #16a34a; border-color: #16a34a; color: #fff; }
@@ -1577,6 +1578,11 @@ const PV_PENS = [
   { id: "b", label: "青", c: "#2563eb", w: 0.0026 },
   { id: "y", label: "マーカー", c: "rgba(250, 204, 21, .45)", w: 0.016 },
 ];
+// The 複合プリント set whose 問題/解答 PDF is open in the viewer (only while that set's page is open).
+const setOfPrint = (name) => {
+  const set = ui.setOpen && (S.sets ?? []).find((x) => x.id === ui.setOpen);
+  return set && name && (set.print.includes(name) || set.answer.includes(name)) ? set : null;
+};
 const pv = (() => {
   const dlg = document.getElementById("dlg-viewer");
   let doc = null, name = "", note = null, pages = [], io = null, saveT = 0, gen = 0;
@@ -1591,6 +1597,7 @@ const pv = (() => {
       <span class="pv-title">${esc(name)}</span>
       <button type="button" data-v="note" aria-pressed="${noting}">${I.pencil}ノート</button>
       <button type="button" data-v="tab">別タブ</button>
+      ${setOfPrint(name) ? `<button type="button" data-v="rec">結果をつける</button>` : ""}
       <div class="pv-tools" ${noting ? "" : "hidden"}>
         ${PV_PENS.map((p) => `<button type="button" class="pv-sw" data-v="pen" data-pen="${p.id}" aria-label="${p.label}" aria-pressed="${tool === p.id}"><i style="background:${p.c}"></i></button>`).join("")}
         <button type="button" data-v="pen" data-pen="e" aria-pressed="${tool === "e"}">消しゴム</button>
@@ -1809,6 +1816,7 @@ const pv = (() => {
     switch (b.dataset.v) {
       case "close": close(); break;
       case "tab": openPdfTab(name); break;
+      case "rec": close(); setTimeout(() => document.querySelector("#dlg-random .set-list")?.scrollIntoView({ block: "start" }), 50); break;
       case "note":
         noting = !noting; syncBar();
         if (noting) toast(finger ? "ノート：指やペンで書けます" : "ノート：Apple Pencilで書けます（指はスクロール）");
@@ -1970,37 +1978,40 @@ function setsHtml(o) {
     }).join("") || `<li class="pk-s" style="padding:10px 0">このコースのセットはまだありません</li>`}</ul>`;
 }
 function setDetailHtml(set) {
-  const res = ui.setRes ?? {};
+  const res = ui.setRes ?? {}, memo = ui.setMemo ?? {};
   const rows = set.ids.map((id, i) => {
     const p = S.problems.find((x) => x.id === id);
     if (!p) return "";
     return `<li class="set-row"><button class="set-t" data-pick="${esc(id)}"><span class="num">${i + 1}</span><span class="pk-main"><div class="pk-t">${esc(problemTitle(p))}</div>
       <div class="pk-s">${esc(UNITS.find((x) => x.id === p.unitId)?.name ?? "")}・${esc(p.label)}${p.step1 ? "・解けた" : ""}</div></span></button>
-      <div class="res-btns">${RES.map(([k, l]) => `<button data-res="${esc(id)}:${k}" class="${res[id] === k ? `on r-${k}` : ""}">${l}</button>`).join("")}</div></li>`;
+      <div class="res-btns">${RES.map(([k, l]) => `<button data-res="${esc(id)}:${k}" class="${res[id] === k ? `on r-${k}` : ""}">${l}</button>`).join("")}</div>
+      <textarea class="inp set-memo" rows="1" data-memo="${esc(id)}" placeholder="結果メモ（詰まった所・なくてもOK）">${esc(memo[id] ?? "")}</textarea></li>`;
   }).join("");
-  const n = Object.keys(res).length;
+  const n = set.ids.filter((id) => res[id] || memo[id]?.trim()).length;
   return `<button class="small-pill" data-d="sets-back" style="margin-top:0">← セット一覧</button>
     <h2 class="dlg-title" style="margin-top:10px">${esc(set.name)}</h2>
-    <p class="dlg-desc">プリントを${set.minutes}分で一気に解いて、終わったら1問ずつ ○／ヒント／× を付けて「まとめて記録」。</p>
+    <p class="dlg-desc">プリントを${set.minutes}分で一気に解いて、終わったら1問ずつ ○／ヒント／× と結果メモを付けて「まとめて記録」。メモは問題の「結果メモ」に入ります。</p>
     <dl class="src" style="margin:8px 0">${set.print ? `<dt>問題</dt><dd>${pdfLinks(set.print)}</dd>` : ""}${set.answer ? `<dt>解答</dt><dd>${pdfLinks(set.answer)}</dd>` : ""}</dl>
     <ul class="pick set-list">${rows}</ul>
     <div class="sim-actions"><button class="btn pri" data-d="rec" ${n ? "" : "disabled"}>まとめて記録（${n}/${set.ids.length}問）</button></div>`;
 }
 function recordSet(set) {
-  const res = ui.setRes ?? {};
+  const res = ui.setRes ?? {}, memo = ui.setMemo ?? {};
   const now = Date.now(), d = mdTxt(now);
-  let ok = 0;
+  let ok = 0, n = 0;
   S.problems = S.problems.map((p) => {
-    const r = res[p.id];
-    if (!r) return p;
-    const line = `${d} 複合 ${set.name}：${RES_TXT[r]}`;
+    if (!set.ids.includes(p.id)) return p;
+    const r = res[p.id], m = (memo[p.id] ?? "").trim().replace(/\s*\n\s*/g, " ");
+    if (!r && !m) return p;
+    n++;
+    const line = `${d} 複合 ${set.name}：${r ? RES_TXT[r] : "メモ"}${m ? `　${m}` : ""}`;
     const q = { ...p, note: p.note ? `${p.note}\n${line}` : line, updatedAt: now };
     if (r === "o" && !p.step1) { q.step1 = true; q.step1At = now; q.reviewStage = 0; ok++; }
     return q;
   });
   S.setLog = { ...(S.setLog ?? {}), [set.id]: now };
-  S.log = [logEntry(`複合 ${set.name} — ${Object.keys(res).length}問を記録`), ...S.log].slice(0, 50);
-  ui.setRes = {};
+  S.log = [logEntry(`複合 ${set.name} — ${n}問を記録`), ...S.log].slice(0, 50);
+  ui.setRes = {}; ui.setMemo = {};
   commit();
   toast(ok ? `記録しました（新しく解けた ${ok}問）` : "記録しました");
 }
@@ -2031,6 +2042,15 @@ function openRandom() {
     ${set ? `<div class="pk-h">${mdTxt(set.at)} に作ったセット（${set.ids.length}問・${esc(RND_SUBJ.find(([v]) => v === set.subj)?.[1] ?? "")}）</div>${pickRows(set.ids)}` : ""}`;
   if (!dlgX.open) dlgX.showModal();
 }
+// Keep typed memos across re-renders (tapping ○/×/ヒント redraws the dialog).
+dlgX.addEventListener("input", (e) => {
+  const id = e.target.dataset?.memo;
+  if (id == null) return;
+  ui.setMemo = { ...(ui.setMemo ?? {}), [id]: e.target.value };
+  const n = (S.sets ?? []).find((x) => x.id === ui.setOpen)?.ids.filter((k) => ui.setRes?.[k] || ui.setMemo[k]?.trim()).length ?? 0;
+  const b = dlgX.querySelector("[data-d=rec]");
+  if (b) { b.disabled = !n; b.textContent = b.textContent.replace(/（\d+\//, `（${n}/`); }
+});
 dlgX.addEventListener("click", (e) => {
   const pdf = e.target.closest("[data-act=pdf]");
   if (pdf) { openPdf(pdf.dataset.file, pdf.dataset.page); return; }
@@ -2042,14 +2062,19 @@ dlgX.addEventListener("click", (e) => {
   if (t.dataset.mode) { S.randomOpts = { ...o, mode: t.dataset.mode }; save(); openRandom(); return; }
   if (t.dataset.fsubj) { S.randomOpts = { ...o, fsubj: t.dataset.fsubj }; save(); openRandom(); return; }
   if (t.dataset.fmin) { S.randomOpts = { ...o, fmin: Number(t.dataset.fmin) }; save(); openRandom(); return; }
-  if (t.dataset.set) { ui.setOpen = t.dataset.set; ui.setRes = {}; openRandom(); return; }
+  if (t.dataset.set) { ui.setOpen = t.dataset.set; ui.setRes = {}; ui.setMemo = {}; openRandom(); return; }
   if (t.dataset.res) {
     const [id, k] = t.dataset.res.split(":");
     ui.setRes = { ...(ui.setRes ?? {}) };
     if (ui.setRes[id] === k) delete ui.setRes[id]; else ui.setRes[id] = k;
     openRandom(); return;
   }
-  if (t.dataset.d === "sets-back") { ui.setOpen = null; ui.setRes = {}; openRandom(); return; }
+  if (t.dataset.d === "sets-back") {
+    const back = () => { ui.setOpen = null; ui.setRes = {}; ui.setMemo = {}; openRandom(); };
+    if (Object.values(ui.setMemo ?? {}).some((v) => v.trim())) askConfirm("書きかけの結果メモが消えます\nセット一覧に戻る？", "戻る").then((y) => y && back());
+    else back();
+    return;
+  }
   if (t.dataset.d === "rec") {
     const set = (S.sets ?? []).find((x) => x.id === ui.setOpen);
     if (set) { recordSet(set); openRandom(); }
