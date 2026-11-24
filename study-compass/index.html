@@ -360,6 +360,8 @@ textarea.inp { height: auto; padding: 8px; resize: vertical; }
 .w-edit { flex: none; border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; font-size: 12px; color: var(--muted-foreground); }
 .w-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .w-form .full { grid-column: 1 / -1; }
+.w-bulk { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px; font-size: 13px; }
+.w-bulk summary { cursor: pointer; font-weight: 600; color: var(--primary-strong); }
 @media (max-width: 480px) { .w-form { grid-template-columns: 1fr; } }
 /* toast */
 #audio-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 90; display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; background: var(--background); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 6px 16px rgba(15, 23, 42, .15); padding: 8px 10px; max-width: 640px; margin: 0 auto; }
@@ -2279,6 +2281,12 @@ function openWords(withProblem) {
       <button type="button" class="btn ghost" data-w="new" hidden>やめる</button>
       <button type="button" class="btn pri" data-w="save">足す</button>
     </div>
+    <details class="w-bulk" id="w-bulk"><summary>まとめて一気に入れる</summary>
+      <p class="m12" style="margin:6px 0">1行に1つ、「語 意味」の順で書くか貼り付けてね。区切りはスペース・タブ・「：」どれでもOK。<br>出てきた問題・年度は上の欄のものが全部に付くよ。</p>
+      <textarea class="inp" id="w-bulk-ta" rows="6" placeholder="make up for 埋め合わせる&#10;postpone 延期する&#10;in terms of：〜の観点から" autocapitalize="off"></textarea>
+      <p class="m12" id="w-bulk-n" style="margin:6px 0 0"></p>
+      <div class="sim-actions" style="margin-top:8px"><button type="button" class="btn pri" data-w="bulk" disabled>まとめて足す</button></div>
+    </details>
     <div class="pk-h">貯めた単熟語 <span id="w-n">${S.words.length}</span>語</div>
     <label class="search" style="margin-top:6px">${I.search}<input class="sel" id="w-q" placeholder="語・意味・問題で探す" style="width:100%"></label>
     <div id="w-rows">${wordRows()}</div>`;
@@ -2299,7 +2307,25 @@ function refreshWords() {
   document.getElementById("w-n").textContent = S.words.length;
   save(); render();
 }
+// "make up for 埋め合わせる" → word = the leading English part, meaning = the rest.
+// A tab, "：", ":", "＝", "=", " - " also work as the split.
+function parseBulkWords(text) {
+  return String(text).split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => {
+    l = l.replace(/^[\-・•*●○\d０-９]+[.)．）]?\s+/, "");
+    let m = l.match(/^(.+?)\s*(?:\t|：|＝|=|:|\s[-–—]\s)\s*(.*)$/);
+    if (!m) m = l.match(/^([\x00-\x7F~〜（）()’‘]+?)[\s　]*([^\x00-\x7F].*)$/);
+    if (!m) m = l.match(/^(\S+)[\s　]+(.*)$/);
+    return m ? { w: m[1].trim(), m: m[2].trim() } : { w: l, m: "" };
+  }).filter((x) => x.w);
+}
 dlgW.addEventListener("input", (e) => {
+  if (e.target.id === "w-bulk-ta") {
+    const list = parseBulkWords(e.target.value);
+    document.getElementById("w-bulk-n").innerHTML = list.length
+      ? `${list.length}語：${list.slice(0, 3).map((x) => `<b>${esc(x.w)}</b>＝${esc(x.m || "（意味なし）")}`).join("　")}${list.length > 3 ? " …" : ""}` : "";
+    dlgW.querySelector("[data-w=bulk]").disabled = !list.length;
+    return;
+  }
   if (e.target.id !== "w-q") return;
   ui.wq = e.target.value;
   document.getElementById("w-rows").innerHTML = wordRows();
@@ -2314,6 +2340,21 @@ dlgW.addEventListener("click", async (e) => {
   if (a === "close") { dlgW.close(); return; }
   if (a === "edit") { wordFormMode(S.words.find((w) => w.id === t.dataset.id)); dlgW.scrollTop = 0; document.getElementById("w-w").focus(); return; }
   if (a === "new") { wordFormMode(null); return; }
+  if (a === "bulk") {
+    const ta = document.getElementById("w-bulk-ta");
+    const list = parseBulkWords(ta.value);
+    if (!list.length) return;
+    const src = document.getElementById("w-src").value.trim();
+    const pid = src === ui.wSrc.src ? ui.wSrc.pid : "";
+    const have = new Set(S.words.map((x) => `${x.w}|${x.m}`.toLowerCase()));
+    const fresh = list.filter((x) => !have.has(`${x.w}|${x.m}`.toLowerCase()));
+    const now = Date.now();
+    S.words = [...fresh.map((x, i) => ({ id: newId(), at: now - i, w: x.w, m: x.m, src, pid, note: "" })), ...S.words];
+    ta.value = ""; document.getElementById("w-bulk-n").textContent = ""; t.disabled = true;
+    refreshWords();
+    toast(`${fresh.length}語を足しました${list.length > fresh.length ? `（同じもの${list.length - fresh.length}語はとばした）` : ""}`);
+    return;
+  }
   if (a === "del") {
     const w = S.words.find((x) => x.id === ui.wEdit);
     if (!w || !(await askConfirm(`「${w.w}」を単熟語帳から消しますか？`, "消す"))) return;
