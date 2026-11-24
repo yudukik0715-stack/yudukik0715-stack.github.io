@@ -332,6 +332,35 @@ textarea.inp { height: auto; padding: 8px; resize: vertical; }
 .kv { margin-top: 10px; display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
 .kv.col { flex-direction: column; gap: 2px; }
 
+/* english: choice review & word book */
+.ch-list { list-style: none; margin: 0 0 4px; padding: 0; }
+.ch-list li + li { border-top: 1px solid var(--border); }
+.ch-item { display: block; width: 100%; padding: 10px 0; text-align: left; font-size: 13px; }
+.ch-item:hover .ch-q { color: var(--primary-strong); }
+.ch-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ch-q { font-weight: 600; }
+.ch-basis { margin-top: 6px; border-left: 3px solid var(--primary); padding-left: 8px; line-height: 1.5; overflow-wrap: anywhere; }
+.ch-pairs { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.pair { border: 1px solid var(--border); background: var(--background); border-radius: 8px; padding: 2px 8px; font-size: 12px; overflow-wrap: anywhere; }
+.pair i { font-style: normal; color: var(--primary); margin: 0 4px; }
+.ch-wrong { margin-top: 6px; font-size: 12px; color: var(--muted-foreground); overflow-wrap: anywhere; }
+.zure { border-radius: 999px; padding: 1px 10px; font-size: 11px; font-weight: 600; border: 1px solid var(--warn-bar); color: var(--warn); background: color-mix(in srgb, var(--warn-bar) 10%, transparent); }
+.pair-row { display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 6px; align-items: center; margin-top: 6px; }
+.pair-row .arrow { color: var(--primary); font-weight: 700; }
+.pair-row .px { color: var(--muted-foreground); padding: 4px; }
+.pair-head { display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 6px; font-size: 11px; color: var(--muted-foreground); }
+.pair-head span:nth-child(2), .pair-head span:nth-child(4) { visibility: hidden; }
+.zure-seg { margin: 4px 0 0; }
+@media (min-width: 768px) { .lgrid.ch-grid { grid-template-columns: 1.4fr 1fr; } }
+.w-list { list-style: none; margin: 8px 0 0; padding: 0; font-size: 13px; }
+.w-list li { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; border-top: 1px solid var(--border); }
+.w-main { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.w-w { font-weight: 600; }
+.w-s { font-size: 11px; color: var(--muted-foreground); margin-top: 2px; }
+.w-edit { flex: none; border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; font-size: 12px; color: var(--muted-foreground); }
+.w-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.w-form .full { grid-column: 1 / -1; }
+@media (max-width: 480px) { .w-form { grid-template-columns: 1fr; } }
 /* toast */
 #audio-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 90; display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; background: var(--background); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 6px 16px rgba(15, 23, 42, .15); padding: 8px 10px; max-width: 640px; margin: 0 auto; }
 #audio-bar[hidden] { display: none; }
@@ -359,6 +388,8 @@ body:has(#audio-bar:not([hidden])) #toasts { bottom: 120px; }
 <dialog id="dlg-random"></dialog>
 <dialog id="dlg-pdf"></dialog>
 <dialog id="dlg-viewer"></dialog>
+<dialog id="dlg-choice" class="sm"></dialog>
+<dialog id="dlg-words"></dialog>
 <input type="file" id="imp" accept="application/json,.json" hidden>
 <input type="file" id="imp-pdf" accept="application/pdf,.pdf,audio/*,.mp3,.m4a,.aac,.wav,.zip,application/zip" multiple hidden>
 <script>
@@ -503,6 +534,7 @@ function initial() {
     selected: { math: undefined, physics: undefined, english: undefined },
     view: { kind: "detail" },
     problems: [],
+    words: [],
     log: [],
     reflections: [],
     lastReflect: Date.now(),
@@ -550,6 +582,7 @@ S.problems = S.problems.map((p) => {
   return { ...p, principles: joinSplitPrinciples(p.principles) };
 });
 S.reflections = S.reflections ?? [];
+S.words = Array.isArray(S.words) ? S.words : [];
 S.lastReflect = S.lastReflect ?? Date.now();
 
 const ui = {
@@ -690,6 +723,7 @@ function topbar(D) {
   return `<div class="topbar"><div class="tb-pick">
       <button class="tb-btn" data-act="today">今日の問題${all.length ? `<span class="n">${done}/${all.length}</span>` : ""}</button>
       <button class="tb-btn" data-act="random">ランダム演習</button>
+      ${S.subject === "english" ? `<button class="tb-btn" data-act="words">単熟語帳${S.words.length ? `<span class="n">${S.words.length}</span>` : ""}</button>` : ""}
     </div>${left}<button class="link-muted" data-act="reflect">見直し</button><button class="link-primary" data-act="add">＋ 追加</button></div>`;
 }
 
@@ -822,7 +856,7 @@ function problemDetail(D) {
       <div class="row-btns">${sibMenu}<button class="icon-btn" data-act="edit" aria-label="編集">${I.pencil}</button></div>
     </div>
     ${srcCard(p)}<div class="grid3">${card1}${card2}${card3}</div>
-    ${p.listening ? listeningPanel(p) : ""}`;
+    ${p.listening ? listeningPanel(p) : ""}${hasChoicePanel(p) ? choicePanel(p) : ""}`;
 }
 
 function diffHtml(l) {
@@ -932,6 +966,8 @@ function bottom(D) {
         <div class="stack">${CAUSES.map((c, i) => `<div style="width:${(counts[c.id] / total) * 100}%;background:var(--primary);opacity:${OPACITIES[i]}"></div>`).join("")}</div>
         <ul class="cause-list">${CAUSES.map((c, i) => `<li><span><span class="sw" style="opacity:${OPACITIES[i]}"></span>${c.label}</span><span class="muted">${Math.round((counts[c.id] / total) * 100)}%</span></li>`).join("")}</ul>`}
     </section>`;
+  } else if (S.subject === "english") {
+    right = zureCard();
   } else {
     const now = Date.now();
     right = `<section class="bcard"><div class="m12 b" style="margin-bottom:12px">更新ログ</div>
@@ -1186,6 +1222,7 @@ imp.addEventListener("change", async () => {
     if (!(await askConfirm("今のデータを、このファイルの内容で置きかえますか？", "置きかえる"))) return;
     delete o.view;
     S = { ...initial(), ...o, view: { kind: "detail" } };
+    if (!Array.isArray(S.words)) S.words = [];
     ui.groupKey = null;
     resetFilters();
     commit();
@@ -2094,6 +2131,213 @@ dlgX.addEventListener("click", (e) => {
 closeOnBackdrop(dlgT);
 closeOnBackdrop(dlgX);
 
+/* ---------- English: 選択肢の振り返り & 単熟語帳 ----------
+   p.choiceNotes = [{ id, at, q, basis, pairs: [{ c: 選択肢の言葉, t: 本文の言葉 }], wrong, kind, memo }]
+   S.words = [{ id, at, w, m, src, pid, note }]
+   Both start empty on old records and travel with the normal backup (they live inside S). */
+const ZURE = [
+  { id: "over", label: "言いすぎ" },
+  { id: "none", label: "書いてない" },
+  { id: "opp", label: "逆" },
+  { id: "other", label: "その他" },
+];
+const zureLabel = (k) => ZURE.find((z) => z.id === k)?.label ?? "";
+const hasChoicePanel = (p) => p.subject === "english" && !p.listening && UNITS.find((x) => x.id === p.unitId)?.track !== "listening";
+
+function choicePanel(p) {
+  const list = p.choiceNotes ?? [];
+  const words = S.words.filter((w) => w.pid === p.id);
+  return `<div class="lgrid ch-grid">
+    <section class="card"><div class="card-label">選択肢の振り返り</div>
+      ${list.length ? `<ul class="ch-list">${list.map((c, i) => `<li><button class="ch-item" data-act="ch-open" data-i="${i}">
+        <div class="ch-h"><span class="ch-q">${esc(c.q || `設問${i + 1}`)}</span>${c.kind ? `<span class="zure">${zureLabel(c.kind)}</span>` : ""}</div>
+        ${c.basis ? `<div class="ch-basis">${esc(c.basis)}</div>` : ""}
+        ${c.pairs?.length ? `<div class="ch-pairs">${c.pairs.map((x) => `<span class="pair">${esc(x.c)}<i>⇔</i>${esc(x.t)}</span>`).join("")}</div>` : ""}
+        ${c.wrong || c.memo ? `<div class="ch-wrong">${c.wrong ? `選んだ：${esc(c.wrong)}　` : ""}${esc(c.memo)}</div>` : ""}
+      </button></li>`).join("")}</ul>`
+      : `<p class="muted-p">設問ごとに「根拠の文」「言いかえ」「選んじゃった選択肢のズレ」を残そう。</p>`}
+      <button class="small-pill" data-act="ch-open">＋ 設問を書く</button>
+    </section>
+    <section class="card"><div class="card-label">分からなかった単熟語（この問題）</div>
+      ${words.length ? `<ul class="w-list" style="margin:0">${words.map((w) => `<li><div class="w-main"><span class="w-w">${esc(w.w)}</span>　${esc(w.m)}${w.note ? `<div class="w-s">${esc(w.note)}</div>` : ""}</div></li>`).join("")}</ul>`
+      : `<p class="muted-p">まだありません。</p>`}
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="small-pill" data-act="w-add">＋ 単熟語を足す</button><button class="small-pill" data-act="words">単熟語帳を開く</button></div>
+    </section>
+  </div>`;
+}
+
+function zureCard() {
+  const c = Object.fromEntries(ZURE.map((z) => [z.id, 0]));
+  let n = 0;
+  for (const p of S.problems) for (const x of (p.choiceNotes ?? [])) if (c[x.kind] !== undefined) { c[x.kind]++; n++; }
+  return `<section class="bcard"><div class="m12 b" style="margin-bottom:12px">選択肢のズレ（英語全体${n ? ` ${n}件` : ""}）</div>
+    ${n === 0 ? `<p class="m13" style="margin:0">まだ記録がありません。間違えた選択肢のズレを残すと、ここに自分のクセが出ます。</p>` : `
+      <div class="stack">${ZURE.map((z, i) => `<div style="width:${(c[z.id] / n) * 100}%;background:var(--primary);opacity:${OPACITIES[i]}"></div>`).join("")}</div>
+      <ul class="cause-list">${ZURE.map((z, i) => `<li><span><span class="sw" style="opacity:${OPACITIES[i]}"></span>${z.label}</span><span class="muted">${c[z.id]}件</span></li>`).join("")}</ul>`}
+  </section>`;
+}
+
+/* choice dialog: chips and pair rows change in place, so nothing typed is lost */
+const dlgC = document.getElementById("dlg-choice");
+const pairRow = (x = { c: "", t: "" }) => `<div class="pair-row">
+  <input class="inp" data-pc value="${esc(x.c)}" placeholder="選択肢の言葉" autocapitalize="off">
+  <span class="arrow">⇔</span>
+  <input class="inp" data-pt value="${esc(x.t)}" placeholder="本文の言葉" autocapitalize="off">
+  <button type="button" class="px" data-c="pair-x" aria-label="この組を消す">${I.x}</button></div>`;
+function openChoice(i) {
+  const p = derive().selected;
+  const c = i == null ? null : p.choiceNotes?.[i];
+  ui.chIdx = c ? i : null;
+  const pairs = c?.pairs?.length ? c.pairs : [{ c: "", t: "" }];
+  dlgC.innerHTML = `<button type="button" class="dlg-x" data-c="cancel" aria-label="閉じる">${I.x}</button>
+    <h2 class="dlg-title">選択肢の振り返り</h2>
+    <p class="dlg-desc">${esc(problemTitle(p))}</p>
+    <div class="fstack" style="margin-top:0">
+      <label class="field">設問<input class="inp" id="ch-q" value="${esc(c?.q ?? "")}" placeholder="例：問3"></label>
+      <label class="field">① 正解の根拠になる本文の文<textarea class="inp" id="ch-basis" rows="3" placeholder="本文から写す（線を引いた所）" autocapitalize="off">${esc(c?.basis ?? "")}</textarea></label>
+      <div class="field">② 言いかえ（選択肢の言葉 ⇔ 本文の言葉）
+        <div id="ch-pairs">${pairs.map(pairRow).join("")}</div>
+        <button type="button" class="small-pill" style="margin-top:8px;justify-self:start" data-c="pair-add">＋ もう1組</button>
+      </div>
+      <label class="field">③ 選んじゃった選択肢<input class="inp" id="ch-wrong" value="${esc(c?.wrong ?? "")}" placeholder="例：②（正解できたら空でOK）"></label>
+      <div class="field">本文とのズレ
+        <div class="seg zure-seg">${ZURE.map((z) => `<button type="button" data-z="${z.id}" class="${c?.kind === z.id ? "on" : ""}">${z.label}</button>`).join("")}</div>
+      </div>
+      <label class="field">一言メモ<input class="inp" id="ch-memo" value="${esc(c?.memo ?? "")}" placeholder="例：only がついてて言いすぎ"></label>
+    </div>
+    <div class="dlg-actions">
+      <div>${c ? `<button type="button" class="btn ghost danger" data-c="del">消す</button>` : ""}</div>
+      <div style="display:flex;gap:8px"><button type="button" class="btn ghost" data-c="cancel">やめる</button><button type="button" class="btn pri" data-c="save">保存</button></div>
+    </div>`;
+  dlgC.showModal();
+}
+dlgC.addEventListener("click", async (e) => {
+  const z = e.target.closest("[data-z]");
+  if (z) {
+    const on = z.classList.contains("on");
+    dlgC.querySelectorAll("[data-z]").forEach((b) => b.classList.remove("on"));
+    if (!on) z.classList.add("on");
+    return;
+  }
+  const a = e.target.closest("[data-c]")?.dataset.c;
+  if (!a) return;
+  if (a === "cancel") { dlgC.close(); return; }
+  if (a === "pair-add") {
+    document.getElementById("ch-pairs").insertAdjacentHTML("beforeend", pairRow());
+    const ins = dlgC.querySelectorAll("[data-pc]"); ins[ins.length - 1].focus();
+    return;
+  }
+  if (a === "pair-x") { e.target.closest(".pair-row").remove(); return; }
+  const p = derive().selected;
+  const list = [...(p.choiceNotes ?? [])];
+  if (a === "del") {
+    if (!(await askConfirm("この設問の振り返りを消しますか？", "消す"))) return;
+    list.splice(ui.chIdx, 1);
+    dlgC.close();
+    patchProblem(p.id, { choiceNotes: list }, `${problemTitle(p)} — 選択肢の振り返りを消した`);
+    return;
+  }
+  if (a === "save") {
+    const v = (id) => document.getElementById(id).value.trim();
+    const pairs = [...dlgC.querySelectorAll(".pair-row")].map((r) => ({ c: r.querySelector("[data-pc]").value.trim(), t: r.querySelector("[data-pt]").value.trim() })).filter((x) => x.c || x.t);
+    const prev = ui.chIdx == null ? null : list[ui.chIdx];
+    const c = { id: prev?.id ?? newId(), at: prev?.at ?? Date.now(), q: v("ch-q"), basis: v("ch-basis"), pairs, wrong: v("ch-wrong"),
+      kind: dlgC.querySelector("[data-z].on")?.dataset.z ?? "", memo: v("ch-memo") };
+    if (!c.q && !c.basis && !pairs.length && !c.wrong && !c.kind && !c.memo) { toast("何も書かれていません", "err"); return; }
+    if (prev) list[ui.chIdx] = c; else list.push(c);
+    dlgC.close();
+    patchProblem(p.id, { choiceNotes: list }, `${problemTitle(p)} — 選択肢の振り返り`);
+    toast("選択肢の振り返りを保存しました");
+  }
+});
+
+/* word book */
+const dlgW = document.getElementById("dlg-words");
+function wordRows() {
+  const q = (ui.wq ?? "").toLowerCase();
+  const rows = S.words.filter((w) => !q || `${w.w} ${w.m} ${w.src} ${w.note}`.toLowerCase().includes(q));
+  if (!rows.length) return `<p class="m13" style="margin:12px 0 0">${S.words.length ? "見つかりません" : "まだありません。上から足してね。"}</p>`;
+  return `<ul class="w-list">${rows.map((w) => `<li><div class="w-main"><span class="w-w">${esc(w.w)}</span>　${esc(w.m)}
+    <div class="w-s">${[w.src, w.note].filter(Boolean).map(esc).join("　")}</div></div>
+    <button type="button" class="w-edit" data-w="edit" data-id="${esc(w.id)}">直す</button></li>`).join("")}</ul>`;
+}
+function openWords(withProblem) {
+  const p = derive().selected;
+  ui.wEdit = null; ui.wq = "";
+  ui.wSrc = withProblem && p ? { pid: p.id, src: problemTitle(p) } : { pid: "", src: "" };
+  dlgW.innerHTML = `<button type="button" class="dlg-x" data-w="close" aria-label="閉じる">${I.x}</button>
+    <h2 class="dlg-title">単熟語帳</h2>
+    <p class="dlg-desc">分からなかった単語・熟語を貯めておく場所。</p>
+    <div class="w-form">
+      <label class="field">語<input class="inp" id="w-w" placeholder="例：make up for" autocapitalize="off" autocomplete="off"></label>
+      <label class="field">意味<input class="inp" id="w-m" placeholder="例：埋め合わせる" autocomplete="off"></label>
+      <label class="field">出てきた問題・年度<input class="inp" id="w-src" value="${esc(ui.wSrc.src)}" placeholder="例：2026 神奈川 ①"></label>
+      <label class="field">メモ<input class="inp" id="w-note" placeholder="例文・似た語など" autocomplete="off"></label>
+    </div>
+    <div class="sim-actions" style="margin-top:12px">
+      <button type="button" class="btn ghost danger" data-w="del" hidden>消す</button>
+      <button type="button" class="btn ghost" data-w="new" hidden>やめる</button>
+      <button type="button" class="btn pri" data-w="save">足す</button>
+    </div>
+    <div class="pk-h">貯めた単熟語 <span id="w-n">${S.words.length}</span>語</div>
+    <label class="search" style="margin-top:6px">${I.search}<input class="sel" id="w-q" placeholder="語・意味・問題で探す" style="width:100%"></label>
+    <div id="w-rows">${wordRows()}</div>`;
+  dlgW.showModal();
+  if (withProblem) document.getElementById("w-w").focus();
+}
+function wordFormMode(w) {
+  ui.wEdit = w?.id ?? null;
+  const set = (id, v) => { document.getElementById(id).value = v ?? ""; };
+  set("w-w", w?.w); set("w-m", w?.m); set("w-note", w?.note);
+  set("w-src", w ? w.src : ui.wSrc.src);
+  dlgW.querySelector("[data-w=del]").hidden = !w;
+  dlgW.querySelector("[data-w=new]").hidden = !w;
+  dlgW.querySelector("[data-w=save]").textContent = w ? "保存" : "足す";
+}
+function refreshWords() {
+  document.getElementById("w-rows").innerHTML = wordRows();
+  document.getElementById("w-n").textContent = S.words.length;
+  save(); render();
+}
+dlgW.addEventListener("input", (e) => {
+  if (e.target.id !== "w-q") return;
+  ui.wq = e.target.value;
+  document.getElementById("w-rows").innerHTML = wordRows();
+});
+dlgW.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.isComposing && e.target.closest(".w-form")) { e.preventDefault(); dlgW.querySelector("[data-w=save]").click(); }
+});
+dlgW.addEventListener("click", async (e) => {
+  const t = e.target.closest("[data-w]");
+  if (!t) return;
+  const a = t.dataset.w;
+  if (a === "close") { dlgW.close(); return; }
+  if (a === "edit") { wordFormMode(S.words.find((w) => w.id === t.dataset.id)); dlgW.scrollTop = 0; document.getElementById("w-w").focus(); return; }
+  if (a === "new") { wordFormMode(null); return; }
+  if (a === "del") {
+    const w = S.words.find((x) => x.id === ui.wEdit);
+    if (!w || !(await askConfirm(`「${w.w}」を単熟語帳から消しますか？`, "消す"))) return;
+    S.words = S.words.filter((x) => x.id !== w.id);
+    wordFormMode(null); refreshWords();
+    return;
+  }
+  if (a === "save") {
+    const v = (id) => document.getElementById(id).value.trim();
+    const word = v("w-w");
+    if (!word) { toast("語を入れてね", "err"); document.getElementById("w-w").focus(); return; }
+    const src = v("w-src");
+    if (ui.wEdit) {
+      S.words = S.words.map((x) => (x.id === ui.wEdit ? { ...x, w: word, m: v("w-m"), src, note: v("w-note"), pid: src === x.src ? x.pid : (src === ui.wSrc.src ? ui.wSrc.pid : "") } : x));
+      toast("直しました");
+    } else {
+      S.words = [{ id: newId(), at: Date.now(), w: word, m: v("w-m"), src, pid: src === ui.wSrc.src ? ui.wSrc.pid : "", note: v("w-note") }, ...S.words];
+      toast(`「${word}」を足しました`);
+    }
+    wordFormMode(null); refreshWords();
+    document.getElementById("w-w").focus();
+  }
+});
+
 /* ---------- events ---------- */
 app.addEventListener("click", (e) => {
   const t = e.target.closest("[data-act]");
@@ -2160,6 +2404,9 @@ app.addEventListener("click", (e) => {
     case "reflect": render(); openReflect(); break;
     case "today": render(); openToday(); break;
     case "random": render(); openRandom(); break;
+    case "words": render(); openWords(false); break;
+    case "w-add": render(); openWords(true); break;
+    case "ch-open": render(); openChoice(t.dataset.i == null ? null : Number(t.dataset.i)); break;
     case "similar": render(); ui.simP = D.selected.id; ui.simIdx = 0; renderSimilar(); dlgS.showModal(); break;
     case "cause": {
       const p = D.selected;
