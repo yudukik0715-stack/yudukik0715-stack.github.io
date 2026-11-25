@@ -126,6 +126,7 @@ main { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 24px; 
 .set-row .set-memo { flex: 1 1 100%; min-height: 36px; font-size: 14px; resize: vertical; }
 .guides { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 10px; }
 .guide-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; color: var(--primary-strong); text-decoration: none; background: var(--background); }
+button.guide-chip { font: inherit; font-size: 13px; cursor: pointer; }
 .guide-chip svg { width: 14px; height: 14px; }
 .res-btns { display: flex; gap: 6px; margin-left: auto; }
 .res-btns button { border: 1px solid var(--border); border-radius: 999px; padding: 0 12px; height: 30px; line-height: 1; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; min-width: 44px; flex: none; width: auto; }
@@ -282,6 +283,9 @@ dialog::backdrop { background: rgba(0, 0, 0, .6); }
 /* ---------- PDF viewer + note ---------- */
 #dlg-viewer { width: 100vw; height: 100dvh; max-width: none; max-height: none; inset: 0; margin: 0; padding: 0; border: 0; border-radius: 0; overflow: hidden; background: #d9dde3; box-shadow: none; }
 #dlg-viewer[open] { display: flex; flex-direction: column; }
+#dlg-page { width: 100vw; height: 100dvh; max-width: none; max-height: none; inset: 0; margin: 0; padding: 0; border: 0; border-radius: 0; overflow: hidden; background: var(--background); box-shadow: none; }
+#dlg-page[open] { display: flex; flex-direction: column; }
+#dlg-page iframe { flex: 1; width: 100%; border: 0; background: #fff; }
 .pv-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; padding-top: max(8px, env(safe-area-inset-top)); background: var(--background); border-bottom: 1px solid var(--border); }
 .pv-bar button { font: inherit; font-size: 14px; font-weight: 600; height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--background); color: var(--foreground); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .pv-bar button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
@@ -393,10 +397,11 @@ body:has(#audio-bar:not([hidden])) #toasts { bottom: 120px; }
 <dialog id="dlg-random"></dialog>
 <dialog id="dlg-pdf"></dialog>
 <dialog id="dlg-viewer"></dialog>
+<dialog id="dlg-page"></dialog>
 <dialog id="dlg-choice" class="sm"></dialog>
 <dialog id="dlg-words"></dialog>
 <input type="file" id="imp" accept="application/json,.json" hidden>
-<input type="file" id="imp-pdf" accept="application/pdf,.pdf,audio/*,.mp3,.m4a,.aac,.wav,.zip,application/zip" multiple hidden>
+<input type="file" id="imp-pdf" accept="application/pdf,.pdf,.html,text/html,audio/*,.mp3,.m4a,.aac,.wav,.zip,application/zip" multiple hidden>
 <script>
 "use strict";
 
@@ -1374,6 +1379,7 @@ function pdfLinks(text) {
 // Listening audio the user imported (e.g. 2021_本試_英語リスニング_音声.mp3) is matched to a
 // listening problem by year and 本試/追試; it plays in a bar that stays put while the page re-renders.
 const isAudioName = (n) => /\.(mp3|m4a|aac|wav|mp4)$/i.test(n);
+const isHtmlName = (n) => /\.html?$/i.test(n);
 function audioFor(p) {
   if (UNITS.find((x) => x.id === p.unitId)?.track !== "listening") return null;
   const tsuishi = p.exam === "共テ追試";
@@ -1518,14 +1524,14 @@ async function unzipFiles(file) {
     const off = dv.getUint32(c + 42, true);
     const name = td.decode(new Uint8Array(buf, c + 46, nlen)).split("/").pop();
     c += 46 + nlen + xlen + clen;
-    if (!name || name.startsWith("._") || !(/\.pdf$/i.test(name) || isAudioName(name))) continue;
+    if (!name || name.startsWith("._") || !(/\.pdf$/i.test(name) || isAudioName(name) || isHtmlName(name))) continue;
     const start = off + 30 + dv.getUint16(off + 26, true) + dv.getUint16(off + 28, true);
     const raw = new Blob([new Uint8Array(buf, start, csize)]);
     let blob;
     if (method === 0) blob = raw;
     else if (method === 8 && globalThis.DecompressionStream) blob = await new Response(raw.stream().pipeThrough(new DecompressionStream("deflate-raw"))).blob();
     else continue;
-    out.push(new File([blob], name, { type: /\.pdf$/i.test(name) ? "application/pdf" : "" }));
+    out.push(new File([blob], name, { type: /\.pdf$/i.test(name) ? "application/pdf" : isHtmlName(name) ? "text/html" : "" }));
   }
   return out;
 }
@@ -1538,7 +1544,7 @@ impPdf.addEventListener("change", async () => {
     if (/\.zip$/i.test(x.name) || /zip/.test(x.type)) {
       toast("zipを開いています…");
       try { files.push(...await unzipFiles(x)); } catch (e) { toast(`${x.name} を開けませんでした`, "err"); }
-    } else if (/\.pdf$/i.test(x.name) || isAudioName(x.name) || /^audio\//.test(x.type)) files.push(x);
+    } else if (/\.pdf$/i.test(x.name) || isAudioName(x.name) || isHtmlName(x.name) || /^audio\//.test(x.type)) files.push(x);
   }
   if (!files.length) return;
   let ok = 0;
@@ -1576,8 +1582,31 @@ async function openPdf(name, page) {
     return;
   }
   if (isAudioName(name)) { openPdfTab(name, page); return; }
+  if (isHtmlName(name)) { openPage(name); return; }
   pv.open(name, Number(page) || 1);
 }
+// 解説ページ (HTML imported like the PDFs) shown inside the app. The iframe is sandboxed without
+// same-origin, so the page's own scripts (animations) run but can't touch the app's data.
+const dlgPage = document.getElementById("dlg-page");
+let pageUrl = null;
+async function openPage(name) {
+  try {
+    const blob = await pdfTx("readonly", (st) => st.get(name));
+    if (!blob) throw new Error("missing");
+    if (pageUrl) URL.revokeObjectURL(pageUrl);
+    pageUrl = URL.createObjectURL(new Blob([blob], { type: "text/html" }));
+    dlgPage.innerHTML = `<div class="pv-bar"><button type="button" data-v="close">${I.x}閉じる</button><span class="pv-title">${esc(name.replace(/\.html?$/i, "").replace(/^解説_/, ""))}</span></div>
+      <iframe sandbox="allow-scripts" src="${pageUrl}" title="${esc(name)}"></iframe>`;
+    if (!dlgPage.open) dlgPage.showModal();
+  } catch (e) { toast("解説ページを開けませんでした", "err"); }
+}
+function closePage() {
+  dlgPage.innerHTML = "";
+  if (dlgPage.open) dlgPage.close();
+  if (pageUrl) { URL.revokeObjectURL(pageUrl); pageUrl = null; }
+}
+dlgPage.addEventListener("click", (e) => { if (e.target.closest("[data-v=close]")) closePage(); });
+dlgPage.addEventListener("cancel", (e) => { e.preventDefault(); closePage(); });
 
 /* ---------- PDF viewer with handwriting notes (Apple Pencil) ----------
    Notes live in their own IndexedDB ("study-compass-notes"), keyed by the stored PDF name.
@@ -1894,7 +1923,7 @@ function openPdfList() {
     <h2 class="dlg-title">取り込んだPDF・音声（${names.length}件）</h2>
     ${pdfAlias.size ? `<p class="dlg-desc">そのうち${pdfAlias.size}件は中身で問題とつながっています（ファイル名がちがっても開けます）。</p>` : ""}
     <p class="dlg-desc">PDFとリスニングの音声はこの端末の中だけに保存されます。まとめて入れるときは、ファイルを選ぶ画面で「選択」を押して複数選んでね。zipもそのまま選べます（中のPDFを全部取り込みます）。同じ名前のファイルは新しい方で上書きされます。</p>
-    <div class="sim-actions"><button class="btn pri" data-d="add">PDF・音声を取り込む</button></div>
+    <div class="sim-actions"><button class="btn pri" data-d="add">PDF・音声・解説を取り込む</button></div>
     ${names.length ? `<ul class="pdf-list">${names.map((n) => `<li><span>${esc(n)}</span></li>`).join("")}</ul>` : `<p class="dlg-desc" style="margin-top:12px">まだ何も入っていません。</p>`}`;
   if (!dlgPdfList.open) dlgPdfList.showModal();
 }
@@ -2000,7 +2029,7 @@ function mergeGuides(list) {
   const had = (S.guides ?? []).length;
   if (gone.size) S.guides = (S.guides ?? []).filter((g) => !gone.has(g.url));
   const ok = list.filter((x) => !x?.remove).filter((x) => x && /^https:\/\/claude\.ai\//.test(String(x.url)) && x.title)
-    .map((x) => ({ title: String(x.title).slice(0, 80), url: String(x.url), unitIds: (Array.isArray(x.unitIds) ? x.unitIds : [x.unitId]).map(String).filter((id) => UNITS.some((u) => u.id === id)) }))
+    .map((x) => ({ title: String(x.title).slice(0, 80), url: String(x.url), ...(isHtmlName(String(x.file ?? "")) ? { file: String(x.file) } : {}), unitIds: (Array.isArray(x.unitIds) ? x.unitIds : [x.unitId]).map(String).filter((id) => UNITS.some((u) => u.id === id)) }))
     .filter((x) => x.unitIds.length);
   if (!ok.length) { if (had !== S.guides?.length) save(); return 0; }
   const m = new Map((S.guides ?? []).map((x) => [x.url, x]));
@@ -2012,7 +2041,9 @@ function mergeGuides(list) {
 const guidesFor = (unitId) => (S.guides ?? []).filter((g) => g.unitIds.includes(unitId));
 function guideRow(unitId) {
   const gs = guidesFor(unitId);
-  return gs.length ? `<div class="guides"><span class="m12">解説</span>${gs.map((g) => `<a class="guide-chip" href="${esc(g.url)}" target="_blank" rel="noopener">${esc(g.title)} ↗</a>`).join("")}</div>` : "";
+  return gs.length ? `<div class="guides"><span class="m12">解説</span>${gs.map((g) => g.file && pdfStored(g.file)
+    ? `<button class="guide-chip" data-act="pdf" data-file="${esc(g.file)}" data-page="">${esc(g.title)}</button>`
+    : `<a class="guide-chip" href="${esc(g.url)}" target="_blank" rel="noopener">${esc(g.title)} ↗</a>`).join("")}</div>` : "";
 }
 function mergeSets(list) {
   if (!Array.isArray(list)) return 0;
