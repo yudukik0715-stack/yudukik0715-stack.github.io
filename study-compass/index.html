@@ -1995,10 +1995,14 @@ function randomPicks(subj, n, withSolved) {
 // the data link like sets and are kept in S.guides; same url replaces the old entry.
 function mergeGuides(list) {
   if (!Array.isArray(list)) return 0;
-  const ok = list.filter((x) => x && /^https:\/\/claude\.ai\//.test(String(x.url)) && x.title)
+  // {url, remove: true} takes an old page off (e.g. when it was remade as a new page)
+  const gone = new Set(list.filter((x) => x?.remove).map((x) => String(x.url)));
+  const had = (S.guides ?? []).length;
+  if (gone.size) S.guides = (S.guides ?? []).filter((g) => !gone.has(g.url));
+  const ok = list.filter((x) => !x?.remove).filter((x) => x && /^https:\/\/claude\.ai\//.test(String(x.url)) && x.title)
     .map((x) => ({ title: String(x.title).slice(0, 80), url: String(x.url), unitIds: (Array.isArray(x.unitIds) ? x.unitIds : [x.unitId]).map(String).filter((id) => UNITS.some((u) => u.id === id)) }))
     .filter((x) => x.unitIds.length);
-  if (!ok.length) return 0;
+  if (!ok.length) { if (had !== S.guides?.length) save(); return 0; }
   const m = new Map((S.guides ?? []).map((x) => [x.url, x]));
   for (const x of ok) m.set(x.url, x);
   S.guides = [...m.values()];
