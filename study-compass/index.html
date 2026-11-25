@@ -303,6 +303,9 @@ dialog::backdrop { background: rgba(0, 0, 0, .6); }
 #dlg-viewer.noting .pv-ink { cursor: crosshair; }
 #dlg-viewer.noting.finger .pv-ink { touch-action: none; }
 @media (max-width: 480px) { .pv-bar button { font-size: 13px; height: 34px; padding: 0 9px; } .pv-tools .pv-sw { width: 34px; } .pv-title { flex-basis: 60px; } }
+.pv-tr { position: relative; flex: none; width: min(560px, calc(100% - 16px)); margin: 8px auto 0; background: var(--background); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 8px 24px rgba(15, 23, 42, .22); padding: 10px 12px; max-height: 45%; overflow-y: auto; }
+.pv-tr-x { position: absolute; right: 6px; top: 6px; color: var(--muted-foreground); padding: 4px; }
+.pv-tr .tr-row { padding-right: 28px; }
 .pv-msg { margin: 40px auto; color: #475569; font-size: 14px; }
 
 .dlg-x { position: absolute; right: 16px; top: 16px; color: var(--muted-foreground); }
@@ -1666,6 +1669,89 @@ const setOfPrint = (name) => {
   const set = ui.setOpen && (S.sets ?? []).find((x) => x.id === ui.setOpen);
   return set && name && (set.print.includes(name) || set.answer.includes(name)) ? set : null;
 };
+
+/* 訳 panel inside the PDF viewer: same translator, saves to the 単熟語帳 */
+const pvTr = (() => {
+  let el = null, st = {}, pdfName = "";
+  const srcNow = () => {
+    const p = S.subject === "english" && S.view.kind === "detail" ? derive().selected : null;
+    return p && p.subject === "english" ? { src: problemTitle(p), pid: p.id } : { src: pdfName.replace(/\.pdf$/i, ""), pid: "" };
+  };
+  function html() {
+    const res = st.busy ? `<div class="tr-res m12">訳しています…</div>`
+      : st.err ? `<div class="tr-res m12">${esc(st.err)}</div>`
+      : st.cands ? `<div class="tr-res">
+          <div class="seg">${st.cands.map((c, i) => `<button type="button" class="${st.sel.includes(i) ? "on" : ""}" data-t="chip" data-i="${i}">${c.pos ? `<small>${esc(c.pos)}</small>` : ""}${esc(c.t)}</button>`).join("")}</div>
+          <div class="tr-save"><input class="inp" data-t="m" value="${esc(st.m ?? "")}" placeholder="意味（直してもOK）"><button type="button" class="btn pri" data-t="save">単熟語帳に入れる</button></div>
+          <div class="tr-foot"><span>出てきた所：${esc(srcNow().src)}</span></div></div>` : "";
+    return `<button type="button" class="pv-tr-x" data-t="x" aria-label="閉じる">${I.x}</button>
+      <div class="tr-row"><input class="inp" data-t="q" value="${esc(st.q ?? "")}" placeholder="英単語・熟語を翻訳" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search"><button type="button" class="btn pri" data-t="go">訳す</button></div>
+      ${res}
+      ${st.q && (st.err || st.cands) ? `<div class="tr-foot"><a href="https://translate.google.com/?sl=en&tl=ja&text=${encodeURIComponent(st.q)}" target="_blank" rel="noopener">Google翻訳で見る</a><a href="https://ejje.weblio.jp/content/${encodeURIComponent(st.q)}" target="_blank" rel="noopener">Weblioで見る</a></div>` : ""}`;
+  }
+  const draw = () => { if (el) el.innerHTML = html(); };
+  async function go() {
+    const q = (el.querySelector("[data-t=q]")?.value ?? "").trim();
+    if (!q) return;
+    const id = Date.now();
+    st = { q, busy: true, id }; draw();
+    try {
+      const cands = await translateWord(q);
+      if (st.id !== id) return;
+      st = { q, word: q, cands, sel: [0], m: cands[0].t };
+    } catch (e) {
+      if (st.id !== id) return;
+      st = { q, err: "翻訳につながりませんでした。下のリンクで調べてね。" };
+    }
+    draw();
+  }
+  function onClick(e) {
+    const b = e.target.closest("[data-t]");
+    if (!b) return;
+    const t = b.dataset.t;
+    if (t === "x") { hide(); document.querySelector('#dlg-viewer [data-v="tr"]')?.setAttribute("aria-pressed", "false"); }
+    else if (t === "go") go();
+    else if (t === "chip") {
+      const i = Number(b.dataset.i);
+      st.sel = st.sel.includes(i) ? st.sel.filter((x) => x !== i) : [...st.sel, i].sort((a, c) => a - c);
+      st.m = st.sel.map((k) => st.cands[k].t).join("、");
+      b.classList.toggle("on");
+      el.querySelector("[data-t=m]").value = st.m;
+    } else if (t === "save") {
+      if (!st.word) return;
+      const m = el.querySelector("[data-t=m]").value.trim();
+      if (S.words.some((x) => `${x.w}|${x.m}`.toLowerCase() === `${st.word}|${m}`.toLowerCase())) { toast("もう単熟語帳に入ってるよ", "plain"); return; }
+      const { src, pid } = srcNow();
+      S.words = [{ id: newId(), at: Date.now(), w: st.word, m, src, pid, note: "" }, ...S.words];
+      save(); render();
+      toast(`「${st.word}」を単熟語帳に入れました`);
+      st = {}; draw();
+      el.querySelector("[data-t=q]").focus();
+    }
+  }
+  function onInput(e) {
+    if (e.target.dataset.t === "q") st.q = e.target.value;
+    if (e.target.dataset.t === "m") st.m = e.target.value;
+  }
+  function onKey(e) { if (e.target.dataset.t === "q" && e.key === "Enter" && !e.isComposing) { e.preventDefault(); go(); } }
+  function hide() { el?.remove(); el = null; }
+  function toggle(dlg, name) {
+    pdfName = name;
+    if (el) { hide(); return; }
+    el = document.createElement("div");
+    el.className = "pv-tr";
+    // keep pen/touch handlers of the viewer from treating taps here as drawing
+    for (const ev of ["pointerdown", "pointermove", "pointerup", "touchstart", "touchmove"]) el.addEventListener(ev, (e) => e.stopPropagation(), { passive: true });
+    el.addEventListener("click", (e) => { e.stopPropagation(); onClick(e); });
+    el.addEventListener("input", onInput);
+    el.addEventListener("keydown", onKey);
+    const bar = dlg.querySelector(".pv-bar");
+    if (bar) bar.after(el); else dlg.prepend(el);
+    draw();
+    el.querySelector("[data-t=q]").focus();
+  }
+  return { toggle, hide, get on() { return !!el; } };
+})();
 const pv = (() => {
   const dlg = document.getElementById("dlg-viewer");
   let doc = null, name = "", note = null, pages = [], io = null, saveT = 0, gen = 0;
@@ -1680,6 +1766,7 @@ const pv = (() => {
       <span class="pv-title">${esc(name)}</span>
       <button type="button" data-v="note" aria-pressed="${noting}">${I.pencil}ノート</button>
       <button type="button" data-v="tab">別タブ</button>
+      <button type="button" data-v="tr" aria-pressed="${!!pvTr.on}">訳</button>
       ${setOfPrint(name) ? `<button type="button" data-v="rec">結果をつける</button>` : ""}
       <div class="pv-tools" ${noting ? "" : "hidden"}>
         ${PV_PENS.map((p) => `<button type="button" class="pv-sw" data-v="pen" data-pen="${p.id}" aria-label="${p.label}" aria-pressed="${tool === p.id}"><i style="background:${p.c}"></i></button>`).join("")}
@@ -1878,6 +1965,7 @@ const pv = (() => {
     if (target && page > 1) requestAnimationFrame(() => { box.scrollTop = target.el.offsetTop - 12; });
   }
   function close() {
+    pvTr.hide();
     if (note && name) save(true);
     gen++;
     io?.disconnect(); io = null;
@@ -1899,6 +1987,7 @@ const pv = (() => {
     switch (b.dataset.v) {
       case "close": close(); break;
       case "tab": openPdfTab(name); break;
+      case "tr": pvTr.toggle(dlg, name); syncBar(); break;
       case "rec": close(); setTimeout(() => document.querySelector("#dlg-random .set-list")?.scrollIntoView({ block: "start" }), 50); break;
       case "note":
         noting = !noting; syncBar();
