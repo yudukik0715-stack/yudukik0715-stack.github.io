@@ -124,6 +124,9 @@ main { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 24px; 
 .set-row .set-t { flex: 1 1 220px; display: flex; gap: 10px; align-items: flex-start; text-align: left; padding: 4px 0; min-width: 0; }
 .set-row .num { flex: none; width: 22px; height: 22px; border-radius: 999px; border: 1px solid var(--border); display: grid; place-items: center; font-size: 11px; }
 .set-row .set-memo { flex: 1 1 100%; min-height: 36px; font-size: 14px; resize: vertical; }
+.guides { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 10px; }
+.guide-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; color: var(--primary-strong); text-decoration: none; background: var(--background); }
+.guide-chip svg { width: 14px; height: 14px; }
 .res-btns { display: flex; gap: 6px; margin-left: auto; }
 .res-btns button { border: 1px solid var(--border); border-radius: 999px; padding: 0 12px; height: 30px; line-height: 1; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; min-width: 44px; flex: none; width: auto; }
 .res-btns button.on.r-o { background: #16a34a; border-color: #16a34a; color: #fff; }
@@ -857,7 +860,7 @@ function problemDetail(D) {
         <h1 class="ttl">${esc(problemTitle(p))} <span class="sub">(${esc(p.label)})</span>${p.drill ? `<span class="drill ${p.drill}">${DRILLS[p.drill]}</span>` : ""}</h1></div>
       <div class="row-btns">${sibMenu}<button class="icon-btn" data-act="edit" aria-label="編集">${I.pencil}</button></div>
     </div>
-    ${srcCard(p)}<div class="grid3">${card1}${card2}${card3}</div>
+    ${guideRow(p.unitId)}${srcCard(p)}<div class="grid3">${card1}${card2}${card3}</div>
     ${p.listening ? listeningPanel(p) : ""}${hasChoicePanel(p) ? choicePanel(p) : ""}`;
 }
 
@@ -935,7 +938,7 @@ function problemList(D) {
   const opt = (v, l, cur) => `<option value="${v}" ${String(cur) === String(v) ? "selected" : ""}>${l}</option>`;
   return `<div class="ttl-row">
       <div><div class="eyebrow primary">Past Exam Stock</div>
-        <h1 class="ttl">${unit ? esc(unit.name) : "過去問ストック"} <span class="sub">(${base.length}問)</span></h1></div>
+        <h1 class="ttl">${unit ? esc(unit.name) : "過去問ストック"} <span class="sub">(${base.length}問)</span></h1>${unitId ? guideRow(unitId) : ""}</div>
       <div class="row-btns">
         ${unitId ? `<button class="btn ghost" data-act="show-all">すべて表示</button>` : ""}
         <button class="btn pri" data-act="add">過去問を追加</button>
@@ -1215,9 +1218,9 @@ imp.addEventListener("change", async () => {
   try {
     const o = parseJsonLoose(await file.text());
     if (o?.mode === "add") {
-      applyPdfMap(o.pdfMap); const ns = mergeSets(o.sets);
+      applyPdfMap(o.pdfMap); const ns = mergeSets(o.sets), ng = mergeGuides(o.guides);
       if (o.problems?.length || o.updates?.length) addProblems(o.problems ?? [], o.updates ?? []);
-      else if (ns) toast(`複合プリントを${ns}セット入れました`);
+      else if (ns || ng) toast([ns && `複合プリントを${ns}セット`, ng && `解説ページを${ng}件`].filter(Boolean).join("・") + "入れました");
       return;
     }
     if (!o || !Array.isArray(o.problems)) throw new Error("bad");
@@ -1269,10 +1272,10 @@ async function addFromLink() {
       text = await r.text();
     }
     const o = parseJsonLoose(text);
-    if (!o || !(Array.isArray(o.problems) || Array.isArray(o.updates) || o.pdfMap || Array.isArray(o.sets))) throw new Error("bad");
+    if (!o || !(Array.isArray(o.problems) || Array.isArray(o.updates) || o.pdfMap || Array.isArray(o.sets) || Array.isArray(o.guides))) throw new Error("bad");
     applyPdfMap(o.pdfMap);
-    const ns = mergeSets(o.sets);
-    if (ns && !o.problems?.length && !o.updates?.length) toast(`複合プリントを${ns}セット入れました`);
+    const ns = mergeSets(o.sets), ng = mergeGuides(o.guides);
+    if ((ns || ng) && !o.problems?.length && !o.updates?.length) toast([ns && `複合プリントを${ns}セット`, ng && `解説ページを${ng}件`].filter(Boolean).join("・") + "入れました");
     if (o.problems?.length || o.updates?.length) addProblems(o.problems ?? [], o.updates ?? []);
   } catch (e) {
     toast("過去問のデータを読み込めませんでした", "err");
@@ -1988,6 +1991,25 @@ function randomPicks(subj, n, withSolved) {
 }
 // 複合プリント: ready-made sets of a few problems from different units (one PDF each), solved in
 // one sitting and recorded together. Sets arrive with the data link and are kept in S.sets.
+// 解説ページ: explanation pages Claude made (claude.ai artifacts), tied to units. They arrive with
+// the data link like sets and are kept in S.guides; same url replaces the old entry.
+function mergeGuides(list) {
+  if (!Array.isArray(list)) return 0;
+  const ok = list.filter((x) => x && /^https:\/\/claude\.ai\//.test(String(x.url)) && x.title)
+    .map((x) => ({ title: String(x.title).slice(0, 80), url: String(x.url), unitIds: (Array.isArray(x.unitIds) ? x.unitIds : [x.unitId]).map(String).filter((id) => UNITS.some((u) => u.id === id)) }))
+    .filter((x) => x.unitIds.length);
+  if (!ok.length) return 0;
+  const m = new Map((S.guides ?? []).map((x) => [x.url, x]));
+  for (const x of ok) m.set(x.url, x);
+  S.guides = [...m.values()];
+  save();
+  return ok.length;
+}
+const guidesFor = (unitId) => (S.guides ?? []).filter((g) => g.unitIds.includes(unitId));
+function guideRow(unitId) {
+  const gs = guidesFor(unitId);
+  return gs.length ? `<div class="guides"><span class="m12">解説</span>${gs.map((g) => `<a class="guide-chip" href="${esc(g.url)}" target="_blank" rel="noopener">${esc(g.title)} ↗</a>`).join("")}</div>` : "";
+}
 function mergeSets(list) {
   if (!Array.isArray(list)) return 0;
   const ok = list.filter((x) => x && x.id && Array.isArray(x.ids) && SUBJECT_JA[x.subject]).map((x) => ({
