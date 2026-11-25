@@ -367,6 +367,18 @@ textarea.inp { height: auto; padding: 8px; resize: vertical; }
 .w-edit { flex: none; border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; font-size: 12px; color: var(--muted-foreground); }
 .w-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .w-form .full { grid-column: 1 / -1; }
+.tr-box { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; background: var(--card); margin-bottom: -8px; }
+.tr-row { display: flex; gap: 8px; }
+.tr-row .inp { flex: 1; min-width: 0; }
+.tr-row .btn { flex: none; }
+.tr-res { margin-top: 10px; }
+.tr-res .seg { margin: 0 0 8px; }
+.tr-res .seg button { font-size: 13px; }
+.tr-res .seg small { color: var(--muted-foreground); margin-right: 3px; font-size: 10px; }
+.tr-save { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.tr-save .inp { flex: 1 1 200px; }
+.tr-foot { margin-top: 6px; display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--muted-foreground); }
+.tr-foot a { color: var(--primary-strong); }
 .w-bulk { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px; font-size: 13px; }
 .w-bulk summary { cursor: pointer; font-weight: 600; color: var(--primary-strong); }
 @media (max-width: 480px) { .w-form { grid-template-columns: 1fr; } }
@@ -995,7 +1007,7 @@ function render() {
   app.innerHTML = `<div class="app">${header()}
     <div class="body">
       <aside class="side">${sidebar(D)}</aside>
-      <main>${topbar(D)}${notices()}${main}<div id="bottom">${bottom(D)}</div></main>
+      <main>${topbar(D)}${S.subject === "english" ? trBox(D) : ""}${notices()}${main}<div id="bottom">${bottom(D)}</div></main>
     </div>
     ${ui.sheet ? `<div class="overlay" data-act="sheet-close"></div><div class="sheet"><button class="sheet-x" data-act="sheet-close" aria-label="閉じる">${I.x}</button>${sidebar(D)}</div>` : ""}
   </div>`;
@@ -2436,6 +2448,69 @@ dlgW.addEventListener("click", async (e) => {
   }
 });
 
+
+/* ---------- 1単語翻訳 → 単熟語帳 ----------
+   Uses free browser endpoints with no key (Google's gtx, then MyMemory). Only the typed word is sent. */
+const POS_JA = { noun: "名", verb: "動", adjective: "形", adverb: "副", preposition: "前", conjunction: "接", pronoun: "代", interjection: "間", phrase: "句" };
+async function translateWord(q) {
+  const enc = encodeURIComponent(q);
+  try {
+    const r = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ja&dt=t&dt=bd&q=${enc}`);
+    if (r.ok) {
+      const j = await r.json();
+      const out = [];
+      const push = (t, pos = "") => { t = String(t ?? "").trim(); if (t && !out.some((x) => x.t === t)) out.push({ t, pos }); };
+      push((j?.[0] ?? []).map((x) => x?.[0] ?? "").join(""));
+      for (const d of (Array.isArray(j?.[1]) ? j[1] : [])) for (const w of (d?.[1] ?? []).slice(0, 5)) push(w, POS_JA[d[0]] ?? "");
+      if (out.length) return out.slice(0, 12);
+    }
+  } catch (e) { /* try the next one */ }
+  const r = await fetch(`https://api.mymemory.translated.net/get?q=${enc}&langpair=en|ja`);
+  if (!r.ok) throw new Error(String(r.status));
+  const j = await r.json();
+  const out = [];
+  const push = (t) => { t = String(t ?? "").trim(); if (t && /[^\x00-\x7F]/.test(t) && !out.some((x) => x.t === t)) out.push({ t, pos: "" }); };
+  push(j?.responseData?.translatedText);
+  for (const m of (j?.matches ?? [])) push(m.translation);
+  if (!out.length) throw new Error("empty");
+  return out.slice(0, 8);
+}
+function trBox(D) {
+  const tr = ui.tr ?? {};
+  const p = S.view.kind === "detail" ? D.selected : null;
+  const src = p && p.subject === "english" ? problemTitle(p) : "";
+  let res = "";
+  if (tr.busy) res = `<div class="tr-res m12">訳しています…</div>`;
+  else if (tr.err) res = `<div class="tr-res m12">${esc(tr.err)}</div>`;
+  else if (tr.cands) {
+    res = `<div class="tr-res">
+      <div class="seg">${tr.cands.map((c, i) => `<button type="button" class="${tr.sel?.includes(i) ? "on" : ""}" data-act="tr-chip" data-i="${i}">${c.pos ? `<small>${esc(c.pos)}</small>` : ""}${esc(c.t)}</button>`).join("")}</div>
+      <div class="tr-save"><input class="inp" id="tr-m" value="${esc(tr.m ?? "")}" placeholder="意味（直してもOK）"><button class="btn pri" data-act="tr-save">単熟語帳に入れる</button></div>
+      <div class="tr-foot"><span>${src ? `出てきた問題：${esc(src)}` : "問題を開いてから入れると、出てきた問題も付くよ"}</span></div>
+    </div>`;
+  }
+  return `<section class="tr-box">
+    <div class="tr-row"><input class="inp" id="tr-in" value="${esc(tr.q ?? "")}" placeholder="英単語・熟語を翻訳（例：postpone）" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search"><button class="btn pri" data-act="tr-go">訳す</button></div>
+    ${res}
+    ${tr.q && (tr.err || tr.cands) ? `<div class="tr-foot"><a href="https://translate.google.com/?sl=en&tl=ja&text=${encodeURIComponent(tr.q)}" target="_blank" rel="noopener">Google翻訳で見る</a><a href="https://ejje.weblio.jp/content/${encodeURIComponent(tr.q)}" target="_blank" rel="noopener">Weblioで見る</a></div>` : ""}
+  </section>`;
+}
+async function trGo() {
+  const q = (document.getElementById("tr-in")?.value ?? "").trim();
+  if (!q) return;
+  const id = Date.now();
+  ui.tr = { q, busy: true, id };
+  render();
+  try {
+    const cands = await translateWord(q);
+    if (ui.tr?.id !== id) return;
+    ui.tr = { q, word: q, cands, sel: [0], m: cands[0].t };
+  } catch (e) {
+    if (ui.tr?.id !== id) return;
+    ui.tr = { q, err: "翻訳につながりませんでした。下のリンクで調べて、単熟語帳に手で入れてね。" };
+  }
+  render();
+}
 /* ---------- events ---------- */
 app.addEventListener("click", (e) => {
   const t = e.target.closest("[data-act]");
@@ -2503,6 +2578,28 @@ app.addEventListener("click", (e) => {
     case "today": render(); openToday(); break;
     case "random": render(); openRandom(); break;
     case "words": render(); openWords(false); break;
+    case "tr-go": trGo(); break;
+    case "tr-chip": {
+      const i = Number(t.dataset.i), tr = ui.tr;
+      tr.sel = tr.sel.includes(i) ? tr.sel.filter((x) => x !== i) : [...tr.sel, i].sort((a, b) => a - b);
+      tr.m = tr.sel.map((k) => tr.cands[k].t).join("、");
+      t.classList.toggle("on");
+      const m = document.getElementById("tr-m"); if (m) m.value = tr.m;
+      break;
+    }
+    case "tr-save": {
+      const tr = ui.tr, p = S.view.kind === "detail" ? D.selected : null;
+      const m = (document.getElementById("tr-m")?.value ?? tr.m ?? "").trim();
+      const src = p && p.subject === "english" ? problemTitle(p) : "";
+      if (!tr?.word) break;
+      if (S.words.some((x) => `${x.w}|${x.m}`.toLowerCase() === `${tr.word}|${m}`.toLowerCase())) { toast("もう単熟語帳に入ってるよ", "plain"); break; }
+      S.words = [{ id: newId(), at: Date.now(), w: tr.word, m, src, pid: src ? p.id : "", note: "" }, ...S.words];
+      ui.tr = null;
+      commit();
+      toast(`「${tr.word}」を単熟語帳に入れました`);
+      document.getElementById("tr-in")?.focus();
+      break;
+    }
     case "w-add": render(); openWords(true); break;
     case "ch-open": render(); openChoice(t.dataset.i == null ? null : Number(t.dataset.i)); break;
     case "similar": render(); ui.simP = D.selected.id; ui.simIdx = 0; renderSimilar(); dlgS.showModal(); break;
@@ -2517,6 +2614,8 @@ app.addEventListener("click", (e) => {
 
 app.addEventListener("input", (e) => {
   const t = e.target;
+  if (t.id === "tr-in") { ui.tr = { ...(ui.tr ?? {}), q: t.value }; return; }
+  if (t.id === "tr-m") { if (ui.tr) ui.tr.m = t.value; return; }
   if (t.dataset.lp) {
     const p = derive().selected;
     patchListening(p.id, { [t.dataset.lp]: t.value }, false);
@@ -2541,6 +2640,7 @@ app.addEventListener("focusout", (e) => {
   commit();
 });
 app.addEventListener("keydown", (e) => {
+  if (e.target.id === "tr-in" && e.key === "Enter" && !e.isComposing) { e.preventDefault(); trGo(); return; }
   if (e.target.id === "goal-in" && e.key === "Enter") e.target.blur();
 });
 document.addEventListener("keydown", (e) => {
