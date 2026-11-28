@@ -426,6 +426,25 @@ button.logo { background: none; border: 0; padding: 0; cursor: pointer; color: i
 .h-guides { margin-top: 10px; }
 .h-guides summary { cursor: pointer; font-size: 14px; font-weight: 500; }
 .h-guides .guides { margin-top: 8px; }
+
+/* 通し演習 */
+.ex-part { margin-top: 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; }
+.ex-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ex-sub { font-size: 16px; font-weight: 600; }
+.ex-min { width: 64px; display: inline-block; padding: 4px 6px; margin: 0 2px; }
+.ex-row { margin-top: 10px; }
+.ex-rec { display: grid; gap: 6px; margin-top: 10px; }
+.ex-rec .btn { justify-self: start; }
+.ex-hist { list-style: none; margin: 10px 0 0; padding: 0; font-size: 13px; }
+.ex-hist li + li { border-top: 1px solid var(--border); }
+.ex-hist li { padding: 6px 0; }
+#exam-timer { display: none; position: fixed; inset: auto 12px 12px auto; margin: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--background, #fff); color: inherit; box-shadow: 0 6px 16px rgba(15, 23, 42, .18); padding: 8px 10px; gap: 8px; align-items: center; font-size: 13px; max-width: calc(100vw - 24px); z-index: 95; }
+#exam-timer.on { display: flex; }
+#exam-timer .et-l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 32vw; color: var(--muted-foreground, #64748b); font-size: 12px; }
+#exam-timer .et-t { white-space: nowrap; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 16px; color: var(--primary-strong); }
+#exam-timer .et-t.soon { color: #d97706; }
+#exam-timer .et-t.over { color: #dc2626; }
+#exam-timer button { white-space: nowrap; border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; background: transparent; font-size: 12px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -443,6 +462,8 @@ button.logo { background: none; border: 0; padding: 0; cursor: pointer; color: i
 <dialog id="dlg-page"></dialog>
 <dialog id="dlg-choice" class="sm"></dialog>
 <dialog id="dlg-words"></dialog>
+<dialog id="dlg-exam"></dialog>
+<div id="exam-timer" popover="manual"></div>
 <input type="file" id="imp" accept="application/json,.json" hidden>
 <input type="file" id="imp-pdf" accept="application/pdf,.pdf,.html,text/html,audio/*,.mp3,.m4a,.aac,.wav,.zip,application/zip" multiple hidden>
 <script>
@@ -1098,6 +1119,7 @@ function homeView() {
       <button class="h-act" data-act="add"><b>＋ 問題を追加</b><span class="m11 muted">できなかった問題を記録</span></button>
     </div>
   </section>
+  ${examsHome()}
   ${gBy.length ? `<section class="h-card">
     <div class="h-card-t">解説ページ <span class="m12 muted">${gs.length}本</span></div>
     ${gBy.map(([x, l]) => `<details class="h-guides"><summary>${x.label} <span class="muted">${l.length}本</span></summary><div class="guides">${l.map(chip).join("")}</div></details>`).join("")}
@@ -1108,6 +1130,164 @@ function homeView() {
       `<ul class="log">${S.log.slice(0, 5).map((l) => `<li><span class="t">${esc(l.text)}</span><span class="a">${relTime(l.at, now)}</span></li>`).join("")}</ul>`}
   </section>`;
 }
+
+/* ---------- 大学別通し演習: one university's whole exam, at the real time limit ---------- */
+// Exams arrive in the data link ("exams") like sets; results stay in S.examLog per exam.
+function mergeExams(list) {
+  if (!Array.isArray(list)) return 0;
+  const ok = list.filter((x) => x && x.id && x.school && Array.isArray(x.parts)).map((x) => ({
+    id: String(x.id), school: String(x.school), name: String(x.name ?? ""), note: String(x.note ?? ""), order: Number(x.order) || 0,
+    parts: x.parts.filter((p) => p && SUBJECT_JA[p.subject]).map((p) => ({ subject: p.subject, label: String(p.label ?? SUBJECT_JA[p.subject]),
+      minutes: Number(p.minutes) || 60, range: String(p.range ?? ""), q: String(p.q ?? ""), a: String(p.a ?? "") })) }));
+  if (!ok.length) return 0;
+  const m = new Map((S.exams ?? []).map((x) => [x.id, x]));
+  for (const x of ok) m.set(x.id, x);
+  S.exams = [...m.values()];
+  save();
+  return ok.length;
+}
+const examRecs = (id) => S.examLog?.[id] ?? [];
+function examsHome() {
+  const ex = S.exams ?? [];
+  if (!ex.length) return "";
+  const schools = [...new Set([...ex].sort((a, b) => a.order - b.order).map((x) => x.school))];
+  return `<section class="h-card">
+    <div class="h-card-t">大学別通し演習 <span class="m12 muted">本番の時間で1回分を通して解く</span></div>
+    ${schools.map((sc) => `<details class="h-guides" ${ui.examSchool === sc ? "open" : ""} data-school="${esc(sc)}"><summary>${esc(sc)} <span class="muted">${ex.filter((x) => x.school === sc).length}回分</span></summary>
+      <ul class="pick">${ex.filter((x) => x.school === sc).map((x) => {
+        const recs = examRecs(x.id);
+        const doneParts = new Set(recs.map((r) => r.part));
+        const last = recs.length ? Math.max(...recs.map((r) => r.at)) : 0;
+        return `<li><button data-act="exam" data-id="${esc(x.id)}"><span class="pk-main"><div class="pk-t">${esc(x.name)}</div>
+          <div class="pk-s">${x.parts.map((p, i) => `${doneParts.has(i) ? "✓" : ""}${esc(p.label)} ${p.minutes}分`).join("・")}</div></span>
+          <span class="pk-st ${last ? "ok" : ""}">${last ? `${mdTxt(last)} 済` : ""}</span></button></li>`;
+      }).join("")}</ul></details>`).join("")}
+  </section>`;
+}
+const dlgE = document.getElementById("dlg-exam");
+function openExam(id) {
+  const x = (S.exams ?? []).find((e) => e.id === id);
+  if (!x) return;
+  ui.examOpen = id;
+  const recs = examRecs(id);
+  const tm = S.examTimer;
+  dlgE.innerHTML = `<button type="button" class="dlg-x" data-d="cancel" aria-label="閉じる">${I.x}</button>
+    <h2 class="dlg-title">${esc(x.school)} ${esc(x.name)}</h2>
+    <p class="dlg-desc">科目ごとに時間を計って、本番と同じように最後まで解こう。終わったら点数や手応えを記録。できなかった大問は Claude に送れば COMPASS に入れるよ。</p>
+    ${x.note ? `<p class="m12" style="margin:4px 0 0;white-space:pre-line">${esc(x.note)}</p>` : ""}
+    ${x.parts.map((p, i) => {
+      const my = recs.filter((r) => r.part === i).sort((a, b) => b.at - a.at);
+      const running = tm && tm.exam === id && tm.part === i;
+      return `<section class="ex-part">
+        <div class="ex-head"><span class="ex-sub">${esc(p.label)}</span>
+          <label class="m12">時間 <input class="inp ex-min" type="number" inputmode="numeric" min="1" max="300" value="${p.minutes}" data-min="${i}"> 分</label></div>
+        ${p.range ? `<div class="m12" style="margin-top:4px">範囲：${esc(p.range)}</div>` : ""}
+        <dl class="src" style="margin:8px 0 0">${p.q ? `<dt>問題</dt><dd>${pdfLinks(p.q)}</dd>` : ""}${p.a ? `<dt>解答</dt><dd>${pdfLinks(p.a)}</dd>` : `<dt>解答</dt><dd class="muted">なし</dd>`}</dl>
+        <div class="ex-row">
+          <button class="btn ${running ? "ghost" : "pri"}" data-timer="${i}">${running ? "タイマーを止める" : `${p.minutes}分タイマー開始`}</button>
+        </div>
+        <div class="ex-rec">
+          <input class="inp" data-score="${i}" placeholder="点数・手応え（例 72/100）" value="${esc(ui.examDraft?.[`${id}:${i}:s`] ?? "")}">
+          <textarea class="inp" rows="2" data-memo="${i}" placeholder="メモ（時間配分・詰まった大問など）">${esc(ui.examDraft?.[`${id}:${i}:m`] ?? "")}</textarea>
+          <button class="btn pri" data-rec="${i}">記録する</button>
+        </div>
+        ${my.length ? `<ul class="ex-hist">${my.map((r) => `<li><span class="b">${mdTxt(r.at)}</span> ${esc(r.score || "—")}${r.memo ? `<div class="m12 muted">${esc(r.memo)}</div>` : ""}</li>`).join("")}</ul>` : ""}
+      </section>`;
+    }).join("")}`;
+  if (!dlgE.open) dlgE.showModal();
+}
+dlgE.addEventListener("input", (e) => {
+  const id = ui.examOpen; const t = e.target;
+  if (t.dataset.score != null) ui.examDraft = { ...(ui.examDraft ?? {}), [`${id}:${t.dataset.score}:s`]: t.value };
+  if (t.dataset.memo != null) ui.examDraft = { ...(ui.examDraft ?? {}), [`${id}:${t.dataset.memo}:m`]: t.value };
+});
+dlgE.addEventListener("change", (e) => {
+  const i = e.target.dataset.min;
+  if (i == null) return;
+  const v = Math.min(300, Math.max(1, Number(e.target.value) || 60));
+  S.exams = S.exams.map((x) => (x.id === ui.examOpen ? { ...x, parts: x.parts.map((p, k) => (k === Number(i) ? { ...p, minutes: v } : p)) } : x));
+  save(); openExam(ui.examOpen);
+});
+dlgE.addEventListener("click", (e) => {
+  const pdf = e.target.closest("[data-act=pdf]");
+  if (pdf) { openPdf(pdf.dataset.file, pdf.dataset.page); return; }
+  if (e.target.closest("[data-d=cancel]")) { dlgE.close(); return; }
+  const x = (S.exams ?? []).find((v) => v.id === ui.examOpen);
+  if (!x) return;
+  const tb = e.target.closest("[data-timer]");
+  if (tb) {
+    const i = Number(tb.dataset.timer), tm = S.examTimer;
+    if (tm && tm.exam === x.id && tm.part === i) stopExamTimer();
+    else startExamTimer(x, i);
+    openExam(x.id); return;
+  }
+  const rb = e.target.closest("[data-rec]");
+  if (rb) {
+    const i = Number(rb.dataset.rec);
+    const score = (dlgE.querySelector(`[data-score="${i}"]`)?.value ?? "").trim();
+    const memo = (dlgE.querySelector(`[data-memo="${i}"]`)?.value ?? "").trim();
+    if (!score && !memo) { toast("点数かメモを書いてね", "err"); return; }
+    S.examLog = { ...(S.examLog ?? {}), [x.id]: [...examRecs(x.id), { at: Date.now(), part: i, score, memo }] };
+    S.log = [logEntry(`通し演習 ${x.school} ${x.name} ${x.parts[i].label}：${score || "記録"}${memo ? `　${memo}` : ""}`), ...S.log].slice(0, 50);
+    const d = { ...(ui.examDraft ?? {}) }; delete d[`${x.id}:${i}:s`]; delete d[`${x.id}:${i}:m`]; ui.examDraft = d;
+    const tm = S.examTimer; if (tm && tm.exam === x.id && tm.part === i) stopExamTimer();
+    commit(); openExam(x.id); toast("記録しました");
+  }
+});
+dlgE.addEventListener("close", () => { ui.examOpen = null; if (S.view.kind === "home") render(); });
+
+/* timer: stays on top of the PDF viewer (top layer popover), survives reloads via S.examTimer */
+const exT = document.getElementById("exam-timer");
+let exTick = null;
+const fmtMS = (ms) => { const t = Math.round(Math.abs(ms) / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; };
+function startExamTimer(x, i) {
+  S.examTimer = { exam: x.id, part: i, label: `${x.school} ${x.name} ${x.parts[i].label}`, end: Date.now() + x.parts[i].minutes * 60000, rang: false };
+  save(); showExamTimer();
+}
+function stopExamTimer() {
+  S.examTimer = null; save();
+  clearInterval(exTick); exTick = null;
+  try { exT.hidePopover?.(); } catch {}
+  exT.classList.remove("on");
+}
+function raiseTimer() {
+  if (!S.examTimer || !exT.showPopover) return;
+  try { exT.hidePopover(); } catch {}
+  try { exT.showPopover(); } catch {}
+}
+function showExamTimer() {
+  const tm = S.examTimer;
+  if (!tm) return;
+  exT.classList.add("on");
+  raiseTimer();
+  const draw = () => {
+    const t = S.examTimer;
+    if (!t) return;
+    const left = t.end - Date.now();
+    exT.innerHTML = `<span class="et-l">${esc(t.label)}</span><span class="et-t ${left < 0 ? "over" : left < 5 * 60000 ? "soon" : ""}">${left >= 0 ? `残り ${fmtMS(left)}` : `終了 +${fmtMS(left)}`}</span><button type="button" data-et="open">開く</button><button type="button" data-et="stop">止める</button>`;
+    if (left < 0 && !t.rang) { t.rang = true; save(); toast("時間です！"); try { navigator.vibrate?.([300, 150, 300]); } catch {} }
+  };
+  draw();
+  clearInterval(exTick);
+  exTick = setInterval(draw, 1000);
+}
+exT.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-et]");
+  if (!b) return;
+  if (b.dataset.et === "stop") { stopExamTimer(); if (dlgE.open) openExam(ui.examOpen); return; }
+  const id = S.examTimer?.exam;
+  document.querySelectorAll("dialog[open]").forEach((d) => { if (d !== dlgE) d.close(); });
+  openExam(id); raiseTimer();
+});
+// a dialog opened after the timer would cover it: bring the timer back to the top each time
+document.addEventListener("toggle", (e) => {
+  const sc = e.target.dataset?.school;
+  if (sc == null) return;
+  if (e.target.open) ui.examSchool = sc; else if (ui.examSchool === sc) ui.examSchool = null;
+}, true);
+new MutationObserver(() => { if (S.examTimer) raiseTimer(); })
+  .observe(document.body, { subtree: true, attributes: true, attributeFilter: ["open"] });
+if (S.examTimer) showExamTimer();
 
 const app = document.getElementById("app");
 function render() {
@@ -1352,9 +1532,9 @@ imp.addEventListener("change", async () => {
   try {
     const o = parseJsonLoose(await file.text());
     if (o?.mode === "add") {
-      applyPdfMap(o.pdfMap); const ns = mergeSets(o.sets), ng = mergeGuides(o.guides);
+      applyPdfMap(o.pdfMap); const ns = mergeSets(o.sets), ng = mergeGuides(o.guides), ne = mergeExams(o.exams);
       if (o.problems?.length || o.updates?.length) addProblems(o.problems ?? [], o.updates ?? []);
-      else if (ns || ng) toast([ns && `複合プリントを${ns}セット`, ng && `解説ページを${ng}件`].filter(Boolean).join("・") + "入れました");
+      else if (ns || ng || ne) toast([ns && `複合プリントを${ns}セット`, ng && `解説ページを${ng}件`, ne && `通し演習を${ne}回分`].filter(Boolean).join("・") + "入れました");
       return;
     }
     if (!o || !Array.isArray(o.problems)) throw new Error("bad");
@@ -1406,10 +1586,10 @@ async function addFromLink() {
       text = await r.text();
     }
     const o = parseJsonLoose(text);
-    if (!o || !(Array.isArray(o.problems) || Array.isArray(o.updates) || o.pdfMap || Array.isArray(o.sets) || Array.isArray(o.guides))) throw new Error("bad");
+    if (!o || !(Array.isArray(o.problems) || Array.isArray(o.updates) || o.pdfMap || Array.isArray(o.sets) || Array.isArray(o.guides) || Array.isArray(o.exams))) throw new Error("bad");
     applyPdfMap(o.pdfMap);
-    const ns = mergeSets(o.sets), ng = mergeGuides(o.guides);
-    if ((ns || ng) && !o.problems?.length && !o.updates?.length) toast([ns && `複合プリントを${ns}セット`, ng && `解説ページを${ng}件`].filter(Boolean).join("・") + "入れました");
+    const ns = mergeSets(o.sets), ng = mergeGuides(o.guides), ne = mergeExams(o.exams);
+    if ((ns || ng || ne) && !o.problems?.length && !o.updates?.length) toast([ns && `複合プリントを${ns}セット`, ng && `解説ページを${ng}件`, ne && `通し演習を${ne}回分`].filter(Boolean).join("・") + "入れました");
     if (o.problems?.length || o.updates?.length) addProblems(o.problems ?? [], o.updates ?? []);
   } catch (e) {
     toast("過去問のデータを読み込めませんでした", "err");
@@ -2732,6 +2912,7 @@ app.addEventListener("click", (e) => {
     case "goal-edit": ui.editingGoal = true; render(); break;
     case "subject": S.subject = id; S.view = { kind: "detail" }; commit(); break;
     case "home": S.view = { kind: "home" }; ui.sheet = false; commit(); break;
+    case "exam": render(); openExam(id); break;
     case "fukugo": S.randomOpts = { ...rndOpts(), mode: "sets" }; render(); openRandom(); break;
     case "theme": S.theme = id; commit(); break;
     case "export": render(); exportData(); break;
