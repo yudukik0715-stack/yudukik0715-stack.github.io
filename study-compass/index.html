@@ -386,7 +386,7 @@ textarea.inp { height: auto; padding: 8px; resize: vertical; }
 .w-bulk summary { cursor: pointer; font-weight: 600; color: var(--primary-strong); }
 @media (max-width: 480px) { .w-form { grid-template-columns: 1fr; } }
 /* toast */
-#audio-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 90; display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; background: var(--background); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 6px 16px rgba(15, 23, 42, .15); padding: 8px 10px; max-width: 640px; margin: 0 auto; }
+#audio-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; top: auto; width: auto; height: auto; overflow: visible; color: inherit; z-index: 90; display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; background: var(--background); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 6px 16px rgba(15, 23, 42, .15); padding: 8px 10px; max-width: 640px; margin: 0 auto; }
 #audio-bar[hidden] { display: none; }
 body:has(#audio-bar:not([hidden])) #toasts { bottom: 120px; }
 #audio-bar .ab-name { font-size: 12px; color: var(--muted-foreground, #64748b); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -440,6 +440,7 @@ button.logo { background: none; border: 0; padding: 0; cursor: pointer; color: i
 .ex-hist li { padding: 6px 0; }
 #exam-timer { display: none; position: fixed; inset: auto 12px 12px auto; margin: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--background, #fff); color: inherit; box-shadow: 0 6px 16px rgba(15, 23, 42, .18); padding: 8px 10px; gap: 8px; align-items: center; font-size: 13px; max-width: calc(100vw - 24px); z-index: 95; }
 #exam-timer.on { display: flex; }
+body:has(#audio-bar:not([hidden])) #exam-timer { bottom: 118px; }
 #exam-timer .et-l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 32vw; color: var(--muted-foreground, #64748b); font-size: 12px; }
 #exam-timer .et-t { white-space: nowrap; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 16px; color: var(--primary-strong); }
 #exam-timer .et-t.soon { color: #d97706; }
@@ -1138,7 +1139,8 @@ function mergeExams(list) {
   const ok = list.filter((x) => x && x.id && x.school && Array.isArray(x.parts)).map((x) => ({
     id: String(x.id), school: String(x.school), name: String(x.name ?? ""), note: String(x.note ?? ""), order: Number(x.order) || 0,
     parts: x.parts.filter((p) => p && SUBJECT_JA[p.subject]).map((p) => ({ subject: p.subject, label: String(p.label ?? SUBJECT_JA[p.subject]),
-      minutes: Number(p.minutes) || 60, range: String(p.range ?? ""), q: String(p.q ?? ""), a: String(p.a ?? "") })) }));
+      minutes: Number(p.minutes) || 60, range: String(p.range ?? ""), q: String(p.q ?? ""), a: String(p.a ?? ""),
+      ...(p.audio && Number(p.audio.year) ? { audio: { year: Number(p.audio.year), tsuishi: !!p.audio.tsuishi } } : {}) })) }));
   if (!ok.length) return 0;
   const m = new Map((S.exams ?? []).map((x) => [x.id, x]));
   for (const x of ok) m.set(x.id, x);
@@ -1152,7 +1154,7 @@ function examsHome() {
   if (!ex.length) return "";
   const schools = [...new Set([...ex].sort((a, b) => a.order - b.order).map((x) => x.school))];
   return `<section class="h-card">
-    <div class="h-card-t">大学別通し演習 <span class="m12 muted">本番の時間で1回分を通して解く</span></div>
+    <div class="h-card-t">通し演習（大学別・共テ） <span class="m12 muted">本番の時間で1回分を通して解く</span></div>
     ${schools.map((sc) => `<details class="h-guides" ${ui.examSchool === sc ? "open" : ""} data-school="${esc(sc)}"><summary>${esc(sc)} <span class="muted">${ex.filter((x) => x.school === sc).length}回分</span></summary>
       <ul class="pick">${ex.filter((x) => x.school === sc).map((x) => {
         const recs = examRecs(x.id);
@@ -1182,7 +1184,11 @@ function openExam(id) {
         <div class="ex-head"><span class="ex-sub">${esc(p.label)}</span>
           <label class="m12">時間 <input class="inp ex-min" type="number" inputmode="numeric" min="1" max="300" value="${p.minutes}" data-min="${i}"> 分</label></div>
         ${p.range ? `<div class="m12" style="margin-top:4px">範囲：${esc(p.range)}</div>` : ""}
-        <dl class="src" style="margin:8px 0 0">${p.q ? `<dt>問題</dt><dd>${pdfLinks(p.q)}</dd>` : ""}${p.a ? `<dt>解答</dt><dd>${pdfLinks(p.a)}</dd>` : `<dt>解答</dt><dd class="muted">なし</dd>`}</dl>
+        <dl class="src" style="margin:8px 0 0">${p.q ? `<dt>問題</dt><dd>${pdfLinks(p.q)}</dd>` : ""}${p.a ? `<dt>解答</dt><dd>${pdfLinks(p.a)}</dd>` : `<dt>解答</dt><dd class="muted">なし</dd>`}${p.audio ? (() => {
+          const k = audioFor({ unitId: "english:リスニング:リスニング", year: p.audio.year, exam: p.audio.tsuishi ? "共テ追試" : "共テ本試" });
+          return `<dt>音声</dt><dd>${k ? `<button class="audio-btn" data-act="audio" data-file="${esc(k)}">▶ ${esc(k)}</button>`
+            : `<span class="muted">${p.audio.year}年の音声を「バックアップ → 取り込んだPDF・音声」で入れると、ここで再生できます</span>`}</dd>`;
+        })() : ""}</dl>
         <div class="ex-row">
           <button class="btn ${running ? "ghost" : "pri"}" data-timer="${i}">${running ? "タイマーを止める" : `${p.minutes}分タイマー開始`}</button>
         </div>
@@ -1211,6 +1217,8 @@ dlgE.addEventListener("change", (e) => {
 dlgE.addEventListener("click", (e) => {
   const pdf = e.target.closest("[data-act=pdf]");
   if (pdf) { openPdf(pdf.dataset.file, pdf.dataset.page); return; }
+  const au = e.target.closest("[data-act=audio]");
+  if (au) { playAudio(au.dataset.file); return; }
   if (e.target.closest("[data-d=cancel]")) { dlgE.close(); return; }
   const x = (S.exams ?? []).find((v) => v.id === ui.examOpen);
   if (!x) return;
@@ -1285,7 +1293,7 @@ document.addEventListener("toggle", (e) => {
   if (sc == null) return;
   if (e.target.open) ui.examSchool = sc; else if (ui.examSchool === sc) ui.examSchool = null;
 }, true);
-new MutationObserver(() => { if (S.examTimer) raiseTimer(); })
+new MutationObserver(() => { if (S.examTimer) raiseTimer(); if (!abBar.hidden && document.querySelector("dialog[open]")) raiseTop(abBar); })
   .observe(document.body, { subtree: true, attributes: true, attributeFilter: ["open"] });
 if (S.examTimer) showExamTimer();
 
@@ -1712,13 +1720,22 @@ async function playAudio(name) {
     abAudio.src = abUrl;
     document.getElementById("ab-name").textContent = name;
     abBar.hidden = false;
+    raiseTop(abBar);
     abAudio.play().catch(() => { /* iOS may need a second tap on the player */ });
   } catch (e) { toast("音声を開けませんでした", "err"); }
 }
 document.getElementById("ab-x").addEventListener("click", () => {
   abAudio.pause(); abAudio.removeAttribute("src"); abAudio.load();
   if (abUrl) URL.revokeObjectURL(abUrl); abUrl = null; abBar.hidden = true;
+  try { abBar.hidePopover?.(); } catch {}
 });
+// fixed bars (audio, exam timer) go to the top layer so an open dialog doesn't cover them
+function raiseTop(el) {
+  if (!el.showPopover) return;
+  if (!el.hasAttribute("popover")) el.setAttribute("popover", "manual");
+  try { el.hidePopover(); } catch {}
+  try { el.showPopover(); } catch {}
+}
 function srcCard(p) {
   const s = p.src;
   if (!s) return "";
