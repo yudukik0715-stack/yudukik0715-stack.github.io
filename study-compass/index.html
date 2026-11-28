@@ -398,6 +398,34 @@ body:has(#audio-bar:not([hidden])) #toasts { bottom: 120px; }
 .toast .ic { color: var(--success); }
 .toast.err .ic { color: var(--destructive); }
 @keyframes tin { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* home */
+main.home { max-width: 960px; width: 100%; margin: 0 auto; gap: 20px; }
+button.logo { background: none; border: 0; padding: 0; cursor: pointer; color: inherit; }
+.h-hero { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: color-mix(in srgb, var(--primary) 6%, var(--card, #fff)); }
+.h-days { font-size: 22px; font-weight: 600; margin-top: 2px; }
+.h-days b { font-size: 40px; color: var(--primary-strong); margin: 0 2px; }
+.h-today { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 120px; padding: 12px 16px; border-radius: 12px; background: var(--background); border: 1px solid var(--border); }
+.h-today-n { font-size: 28px; font-weight: 700; color: var(--primary-strong); }
+.h-today-n span { font-size: 15px; color: var(--muted-foreground); font-weight: 500; }
+.h-card { padding: 16px 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--card, #fff); }
+.h-card-t, .h-sec-t { font-size: 15px; font-weight: 600; }
+.h-sec-t { margin-bottom: 10px; }
+.h-subjs { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.h-subj { text-align: left; padding: 14px 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--card, #fff); cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
+.h-subj:hover { border-color: var(--primary); }
+.h-subj-top { display: flex; justify-content: space-between; align-items: center; }
+.h-subj-name { font-size: 17px; font-weight: 600; }
+.h-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary-strong); }
+.h-bar { height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.h-bar div { height: 100%; background: var(--primary); border-radius: 999px; }
+.h-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.h-act { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--card, #fff); cursor: pointer; text-align: left; }
+.h-act:hover { border-color: var(--primary); }
+.h-act b { font-size: 14px; color: var(--primary-strong); }
+.h-guides { margin-top: 10px; }
+.h-guides summary { cursor: pointer; font-size: 14px; font-weight: 500; }
+.h-guides .guides { margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -557,7 +585,7 @@ function initial() {
     theme: "slate",
     subject: "math",
     selected: { math: undefined, physics: undefined, english: undefined },
-    view: { kind: "detail" },
+    view: { kind: "home" },
     problems: [],
     words: [],
     log: [],
@@ -681,12 +709,12 @@ function derive() {
 function header() {
   return `<header class="hd">
     <button class="menu-btn" data-act="sheet-open" aria-label="単元を開く">${I.menu}</button>
-    <div class="logo"><div class="logo-mark">逆</div><span class="logo-text">Gyakubiki</span></div>
+    <button class="logo" data-act="home" aria-label="ホームへ"><div class="logo-mark">逆</div><span class="logo-text">Gyakubiki</span></button>
     <div class="goal">${ui.editingGoal
       ? `<input id="goal-in" aria-label="目標" value="${esc(S.goal)}">`
       : `<button data-act="goal-edit" title="目標を編集">${esc(S.goal)}</button>`}</div>
-    <nav class="tabs">${SUBJECTS.map((x) =>
-      `<button class="tab ${S.subject === x.id ? "on" : ""}" data-act="subject" data-id="${x.id}">${x.label}</button>`).join("")}</nav>
+    <nav class="tabs"><button class="tab ${S.view.kind === "home" ? "on" : ""}" data-act="home">ホーム</button>${SUBJECTS.map((x) =>
+      `<button class="tab ${S.view.kind !== "home" && S.subject === x.id ? "on" : ""}" data-act="subject" data-id="${x.id}">${x.label}</button>`).join("")}</nav>
     <div class="hd-right">
       <div class="dots" role="radiogroup" aria-label="テーマカラー">${THEMES.map((t) =>
         `<button class="dot ${S.theme === t.id ? "on" : ""}" role="radio" aria-checked="${S.theme === t.id}" title="${t.label}" aria-label="${t.label}" data-act="theme" data-id="${t.id}" style="background:${t.color}"></button>`).join("")}</div>
@@ -1003,9 +1031,95 @@ function bottom(D) {
   return `<div class="bottom">${ring}${right}</div>`;
 }
 
+/* ---------- home: today's work and where each subject stands, at a glance ---------- */
+const EXAM_DAY = new Date(2027, 1, 1); // 千葉工大A・東京電機 前期の初日（2/1）
+function homeView() {
+  const now = Date.now();
+  const left = Math.max(0, Math.round((dayStart(EXAM_DAY.getTime()) - dayStart(now)) / DAY));
+  const t = todaySet();
+  const all = [...t.due, ...t.fresh];
+  const done = all.filter((id) => pickDone(id, t)).length;
+  const due = S.problems.filter((p) => isDue(p, now)).sort((a, b) => nextReview(a) - nextReview(b));
+  const soon = S.problems.filter((p) => { const n = nextReview(p); return n !== null && !isDue(p, now) && dayStart(n) - dayStart(now) <= 3 * DAY; })
+    .sort((a, b) => nextReview(a) - nextReview(b));
+  const reflectDays = Math.floor((dayStart(now) - dayStart(S.lastReflect)) / DAY);
+  const subj = SUBJECTS.map((x) => {
+    const ps = S.problems.filter((p) => p.subject === x.id);
+    const units = UNITS.filter((u) => u.subject === x.id);
+    const pct = coverage(units, S.problems);
+    const solved = ps.filter((p) => p.step1).length;
+    const dueN = ps.filter((p) => isDue(p, now)).length;
+    return `<button class="h-subj" data-act="subject" data-id="${x.id}">
+      <div class="h-subj-top"><span class="h-subj-name">${x.label}</span>${dueN ? `<span class="h-badge">復習 ${dueN}</span>` : ""}</div>
+      <div class="h-bar"><div style="width:${pct}%"></div></div>
+      <div class="m12">単元網羅率 <b class="txt-primary">${pct}%</b></div>
+      <div class="m11 muted" style="margin-top:2px">${ps.length}問 ・ 自力で再現 ${solved} ・ まだ ${ps.length - solved}</div>
+    </button>`;
+  }).join("");
+  const row = (p, tail) => `<li><button data-act="select" data-id="${esc(p.id)}">
+      <span><span class="due-sub">${SUBJECT_JA[p.subject]}</span>${esc(problemTitle(p))}</span><span class="m11">${tail}</span></button></li>`;
+  const gs = S.guides ?? [];
+  const gBy = SUBJECTS.map((x) => [x, gs.filter((g) => (g.unitIds ?? []).some((u) => u.startsWith(x.id + ":")))]).filter(([, l]) => l.length);
+  const chip = (g) => g.file && pdfStored(g.file)
+    ? `<button class="guide-chip" data-act="pdf" data-file="${esc(g.file)}" data-page="">${esc(g.title)}</button>`
+    : `<a class="guide-chip" href="${esc(g.url)}" target="_blank" rel="noopener">${esc(g.title)} ↗</a>`;
+  return `
+  <section class="h-hero">
+    <div>
+      <div class="m12 muted">本番（2/1）まで</div>
+      <div class="h-days">あと <b>${left}</b> 日</div>
+      <div class="m12 muted" style="margin-top:4px">${esc(S.goal)}</div>
+    </div>
+    <div class="h-today">
+      <div class="m12 b">今日の問題</div>
+      <div class="h-today-n">${all.length ? `${done}<span> / ${all.length}</span>` : "—"}</div>
+      <button class="btn pri" data-act="today">${all.length && done >= all.length ? "見る" : "はじめる"}</button>
+    </div>
+  </section>
+  ${reflectDays >= REFLECT_EVERY ? `<section class="notice"><div><div class="notice-t">週1の見直しの日です</div>
+    <div class="m12" style="margin-top:2px">この1週間の勉強が目標に向いていたか確かめよう</div></div>
+    <button class="btn pri" data-act="reflect">見直す</button></section>` : ""}
+  <section class="h-card">
+    <div class="h-card-t">今日の復習 <span class="txt-primary">${due.length}問</span></div>
+    ${due.length ? `<ul class="due">${due.map((p) => row(p, `${(p.reviewStage ?? 0) + 1}回目`)).join("")}</ul>`
+      : `<p class="m13 muted" style="margin:6px 0 0">今日の復習はないよ。${soon.length ? "近いうちに出る復習は下のとおり。" : ""}</p>`}
+    ${soon.length ? `<div class="m12 b" style="margin-top:14px">3日以内に出る復習</div><ul class="due">${soon.map((p) => row(p, `${mdTxt(nextReview(p))}`)).join("")}</ul>` : ""}
+  </section>
+  <section>
+    <div class="h-sec-t">科目</div>
+    <div class="h-subjs">${subj}</div>
+  </section>
+  <section>
+    <div class="h-sec-t">すぐ始める</div>
+    <div class="h-acts">
+      <button class="h-act" data-act="fukugo"><b>複合プリント</b><span class="m11 muted">時間を決めてまとめて解く</span></button>
+      <button class="h-act" data-act="random"><b>ランダム演習</b><span class="m11 muted">単元バラバラに1問ずつ</span></button>
+      <button class="h-act" data-act="words"><b>単熟語帳</b><span class="m11 muted">${S.words.length ? `${S.words.length}語` : "英語の単語・熟語"}</span></button>
+      <button class="h-act" data-act="add"><b>＋ 問題を追加</b><span class="m11 muted">できなかった問題を記録</span></button>
+    </div>
+  </section>
+  ${gBy.length ? `<section class="h-card">
+    <div class="h-card-t">解説ページ <span class="m12 muted">${gs.length}本</span></div>
+    ${gBy.map(([x, l]) => `<details class="h-guides"><summary>${x.label} <span class="muted">${l.length}本</span></summary><div class="guides">${l.map(chip).join("")}</div></details>`).join("")}
+  </section>` : ""}
+  <section class="h-card">
+    <div class="h-card-t">最近の記録</div>
+    ${S.log.length === 0 ? `<p class="m13 muted" style="margin:6px 0 0">まだ記録がありません。</p>` :
+      `<ul class="log">${S.log.slice(0, 5).map((l) => `<li><span class="t">${esc(l.text)}</span><span class="a">${relTime(l.at, now)}</span></li>`).join("")}</ul>`}
+  </section>`;
+}
+
 const app = document.getElementById("app");
 function render() {
   const D = derive();
+  if (S.view.kind === "home") {
+    app.innerHTML = `<div class="app">${header()}
+    <div class="body"><main class="home">${homeView()}</main></div>
+    ${ui.sheet ? `<div class="overlay" data-act="sheet-close"></div><div class="sheet"><button class="sheet-x" data-act="sheet-close" aria-label="閉じる">${I.x}</button>${sidebar(D)}</div>` : ""}
+  </div>`;
+    if (ui.editingGoal) document.getElementById("goal-in")?.focus();
+    return;
+  }
   const main = S.view.kind === "list" || !D.selected ? problemList(D) : problemDetail(D);
   app.innerHTML = `<div class="app">${header()}
     <div class="body">
@@ -2617,6 +2731,8 @@ app.addEventListener("click", (e) => {
     case "sheet-close": ui.sheet = false; render(); break;
     case "goal-edit": ui.editingGoal = true; render(); break;
     case "subject": S.subject = id; S.view = { kind: "detail" }; commit(); break;
+    case "home": S.view = { kind: "home" }; ui.sheet = false; commit(); break;
+    case "fukugo": S.randomOpts = { ...rndOpts(), mode: "sets" }; render(); openRandom(); break;
     case "theme": S.theme = id; commit(); break;
     case "export": render(); exportData(); break;
     case "import": render(); imp.click(); break;
